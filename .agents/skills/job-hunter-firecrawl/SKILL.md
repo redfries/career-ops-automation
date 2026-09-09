@@ -154,3 +154,24 @@ When an eligible job scores **>= 4.0**:
 | `submitted` | Application submitted | **Requires confirmation ID or receipt** |
 | `submission_uncertain` | Submission attempted but unconfirmed | Network drop / timeout during submit |
 | `closed` / `rejected` | Role filled or rejected | Outcome logged |
+
+---
+
+## 7. Browser Extension Copilot & Local Command Hub
+
+For real-time browser interaction while a candidate is browsing Greenhouse, Lever, Ashby, LinkedIn, or Bayt:
+
+1. **Local Command Hub Server** (`scripts/local_server.py`):
+   Runs on `http://127.0.0.1:8765`:
+   * `POST /api/check-job`: Query if active URL/role is already evaluated/tailored. Prevents duplicate folder creation.
+   * `POST /api/evaluate`: ~10ms in-memory keyword preview (zero DB clutter).
+   * `POST /api/tailor`: Sub-second single-column ATS resume compilation (`fast_ats_tailor.py`).
+   * `GET /api/pdf?path=...`: Streams PDF inline into a new browser tab.
+   * `POST /api/open-folder`: Opens application folder in Windows Explorer.
+   * `POST /api/mark-applied`: Sets status to `submitted` in SQLite and updates Notion.
+
+2. **Browser Extension** (`browser_extension/`):
+   * Manifest V3 extension with React/Remix DOM native form autofill (`content_scripts/extractor.js`).
+   * 3-Stage HITL flow: Instant Preview → Candidate Decision Gate (`I Want to Apply!`) → Confirmed Submission Gate (`✅ I Have Applied!`).
+   * Auto-injects content script on demand via `chrome.scripting.executeScript`.
+

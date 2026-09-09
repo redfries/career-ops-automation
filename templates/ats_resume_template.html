@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{CANDIDATE_NAME}} - Resume</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 0.45in 0.5in 0.45in 0.5in;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.35;
+      color: #111827;
+      background-color: #ffffff;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1.5px solid #111827;
+    }
+    h1 {
+      font-size: 20pt;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #111827;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .headline {
+      font-size: 11pt;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 4px;
+    }
+    .contact-line {
+      font-size: 9pt;
+      color: #4b5563;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .contact-line a {
+      color: #111827;
+      text-decoration: none;
+    }
+    .contact-line span::after {
+      content: " • ";
+      margin-left: 8px;
+      color: #9ca3af;
+    }
+    .contact-line span:last-child::after {
+      content: "";
+      margin: 0;
+    }
+    section {
+      margin-bottom: 11px;
+    }
+    h2 {
+      font-size: 10.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #111827;
+      border-bottom: 1px solid #d1d5db;
+      padding-bottom: 2px;
+      margin-bottom: 6px;
+    }
+    p.summary {
+      font-size: 9.5pt;
+      line-height: 1.4;
+      color: #374151;
+      text-align: justify;
+    }
+    .skills-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 9.2pt;
+    }
+    .skill-row {
+      display: flex;
+      line-height: 1.35;
+    }
+    .skill-label {
+      font-weight: 700;
+      color: #111827;
+      width: 145px;
+      flex-shrink: 0;
+    }
+    .skill-values {
+      color: #374151;
+      flex: 1;
+    }
+    .entry {
+      margin-bottom: 8px;
+      page-break-inside: avoid;
+    }
+    .entry:last-child {
+      margin-bottom: 0;
+    }
+    .entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1px;
+    }
+    .entry-title {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #111827;
+    }
+    .entry-org {
+      font-size: 9.5pt;
+      font-weight: 600;
+      color: #374151;
+    }
+    .entry-date {
+      font-size: 9pt;
+      font-weight: 500;
+      color: #6b7280;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .entry-location {
+      font-size: 8.5pt;
+      color: #6b7280;
+      font-style: italic;
+    }
+    .entry-link {
+      font-size: 8.5pt;
+      color: #2563eb;
+      text-decoration: none;
+      margin-left: 6px;
+      font-weight: normal;
+    }
+    ul.bullets {
+      margin-top: 3px;
+      padding-left: 16px;
+    }
+    ul.bullets li {
+      font-size: 9.2pt;
+      line-height: 1.35;
+      color: #374151;
+      margin-bottom: 2.5px;
+    }
+    ul.bullets li strong {
+      color: #111827;
+    }
+    @media print {
+      body {
+        background-color: #ffffff;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>{{CANDIDATE_NAME}}</h1>
+      <div class="headline">{{TAILORED_HEADLINE}}</div>
+      <div class="contact-line">
+        <span>{{LOCATION}}</span>
+        <span><a href="mailto:{{EMAIL}}">{{EMAIL}}</a></span>
+        <span>{{PHONE}}</span>
+        <span><a href="{{LINKEDIN_URL}}">LinkedIn</a></span>
+        <span><a href="{{GITHUB_URL}}">GitHub</a></span>
+        <span><a href="{{PORTFOLIO_URL}}">Portfolio</a></span>
+      </div>
+    </header>
+
+    <section id="summary">
+      <h2>Professional Summary</h2>
+      <p class="summary">{{TAILORED_SUMMARY}}</p>
+    </section>
+
+    <section id="skills">
+      <h2>Technical Skills</h2>
+      <div class="skills-grid">
+        {{SKILLS_ROWS}}
+      </div>
+    </section>
+
+    <section id="projects">
+      <h2>AI & Research Projects</h2>
+      {{PROJECTS_ENTRIES}}
+    </section>
+
+    <section id="experience">
+      <h2>Professional Experience</h2>
+      {{EXPERIENCE_ENTRIES}}
+    </section>
+
+    <section id="education">
+      <h2>Education</h2>
+      {{EDUCATION_ENTRIES}}
+    </section>
+  </div>
+</body>
+</html>

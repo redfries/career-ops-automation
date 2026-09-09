@@ -255,6 +255,34 @@ def test_8_notion_offline_resilience():
     assert count >= 11, f"Database lost records! Count: {count}"
     print(f"[PASS] Offline safety verified: {count} applications remain fully intact in SQLite.")
 
+def test_9_fast_ats_tailor_engine():
+    print("\n--- Test 9: Fast ATS tailoring & validation engine ---")
+    from fast_ats_tailor import run_fast_tailor
+
+    sample_jd = (
+        "Seeking an AI Engineer with hands-on expertise in PyTorch, Computer Vision, "
+        "Cascade R-CNN, OCR document processing, and Docker to deploy scalable models."
+    )
+    res = run_fast_tailor(
+        company="Test Corp Vision",
+        role="Computer Vision Engineer",
+        jd_text=sample_jd,
+        focus="vision",
+        sync_to_notion_flag=False,
+        benchmark=True
+    )
+
+    assert res["success"], f"Fast ATS tailoring failed: {res.get('error')}"
+    assert res["ats_score"] >= 80.0, f"Expected high ATS score, got {res['ats_score']}%"
+    assert res["archetype"] == "vision"
+    assert Path(res["pdf_path"]).exists(), "PDF was not compiled!"
+    assert res["page_count"] in (1, 2), f"Expected 1 or 2 pages, got {res['page_count']}"
+
+    manifest_path = Path(res["bundle_dir"]) / "submission_manifest.json"
+    assert manifest_path.exists(), "submission_manifest.json missing!"
+
+    print(f"[PASS] Fast ATS Engine verified: {res['ats_score']}% score, {res['page_count']} page PDF generated and validated.")
+
 def main():
     import json
     print("=====================================================")
@@ -269,6 +297,7 @@ def main():
     test_6_pdf_validation()
     test_7_submission_gate_enforcement()
     test_8_notion_offline_resilience()
+    test_9_fast_ats_tailor_engine()
 
     # Cleanup test db
     test_db = ROOT_DIR / "data" / "test_resilience.db"
@@ -276,7 +305,7 @@ def main():
         test_db.unlink()
 
     print("\n=====================================================")
-    print("ALL 8 RESILIENCE TESTS PASSED EMPIRICALLY (0 FAILURES)")
+    print("ALL 9 RESILIENCE TESTS PASSED EMPIRICALLY (0 FAILURES)")
     print("=====================================================")
 
 if __name__ == "__main__":

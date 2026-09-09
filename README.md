@@ -116,8 +116,36 @@ python scripts/db_manager.py list
 python scripts/db_manager.py list --status prepared
 ```
 
-### C. Compile a Tailored Resume Bundle
-Creates a collision-proof folder, substantively tailors summary and skills from canonical data, escapes special characters, compiles in staging, validates PDF, and creates `submission_manifest.json`:
+### C. Browser Extension & Local Command Hub (1-Click Copilot)
+Start the local server daemon to enable 1-click ATS evaluation, tailored PDF generation, and React/Remix form autofill directly from your browser:
+```powershell
+# Launch the Local Command Hub:
+python -u scripts/local_server.py
+```
+* **Chrome / Edge Extension**: Located in [`browser_extension/`](browser_extension/README.md).
+* **3-Stage Workflow**: Check Fit & Score (10ms preview) → Candidate Decision Gate (`I Want to Apply`) → Sub-second ATS PDF compilation + 1-Click Form Autofill + Confirmed Submission Gate (`Mark as Applied`).
+* **API Endpoints**: `http://127.0.0.1:8765/api/` (`health`, `check-job`, `evaluate`, `tailor`, `pdf`, `open-pdf`, `open-folder`, `mark-applied`).
+
+### D. Instant Sub-Second ATS Resume Tailoring (CLI)
+Extracts keywords from any job description, calculates an ATS match score, generates keyword diffs, compiles an ATS single-column PDF via native Windows Edge, and prepares Block H answers:
+```powershell
+# Fast ATS adaptation from raw text or job description:
+python scripts/fast_ats_tailor.py `
+  --company "Aramco Digital" `
+  --role "Computer Vision Engineer" `
+  --jd "Seeking experience in PyTorch, Cascade R-CNN, OCR, image processing, and Docker." `
+  --benchmark
+
+# With immediate 1-click Notion sync:
+python scripts/fast_ats_tailor.py `
+  --company "Wynd Labs" `
+  --role "AI Platform Engineer" `
+  --jd-file "job_research/sample_jd.txt" `
+  --sync
+```
+
+### E. Compile Awesome-CV LaTeX Resume Bundle
+Creates a collision-proof folder, substantively tailors summary and skills from canonical data, escapes special characters, compiles via Tectonic XeTeX, validates PDF, and creates `submission_manifest.json`:
 ```powershell
 python scripts/compile_tailored_resume.py `
   --company "Aramco Digital" `
@@ -127,7 +155,7 @@ python scripts/compile_tailored_resume.py `
   --url "https://jobs.aramco.com/example"
 ```
 
-### D. Update Application Status (Enforced Submission Gate)
+### E. Update Application Status (Enforced Submission Gate)
 You cannot transition an application to `submitted` without confirmed evidence:
 ```powershell
 # Correct: with confirmation receipt

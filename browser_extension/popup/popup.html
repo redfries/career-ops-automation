@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Career-Ops Copilot</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="brand">
+        <span class="logo-icon">🎯</span>
+        <div class="brand-text">
+          <span class="brand-title">Career-Ops</span>
+          <span class="brand-subtitle">AI Job Copilot</span>
+        </div>
+      </div>
+      <div id="statusIndicator" class="status-badge status-offline">
+        <span class="status-dot"></span>
+        <span id="statusText">Checking...</span>
+      </div>
+    </div>
+
+    <!-- Active Target Job Card -->
+    <div class="job-card">
+      <div class="card-header-row">
+        <span class="card-label">Active Job Posting</span>
+        <span id="jobStatusPill" class="job-pill pill-new">New Job</span>
+      </div>
+      <input type="text" id="companyInput" placeholder="Company Name" class="input-field">
+      <input type="text" id="roleInput" placeholder="Role Title" class="input-field">
+      <div class="url-row">
+        <span class="url-icon">🔗</span>
+        <div class="url-snippet" id="urlSnippet">Detecting page...</div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toastNotification" class="toast hidden">
+      <span id="toastIcon">✨</span>
+      <span id="toastMessage">Notification</span>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSection" class="loading-section hidden">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingText">Analyzing keywords & checking fit...</div>
+    </div>
+
+    <!-- EXISTING APPLICATION FOUND SECTION (Smart Revisit Recovery) -->
+    <div id="existingAppSection" class="hidden">
+      <div id="existingAppBanner" class="existing-banner banner-prepared">
+        <span class="banner-icon" id="existingBannerIcon">⚡</span>
+        <div class="banner-text">
+          <strong id="existingBannerTitle">Application Ready in Database</strong>
+          <span id="existingBannerSub" class="sub-text">Folder already exists. No duplicate created.</span>
+        </div>
+      </div>
+
+      <!-- Score & Archetype -->
+      <div class="score-banner">
+        <div class="score-ring">
+          <span id="existingScoreVal">--%</span>
+        </div>
+        <div class="score-details">
+          <div class="score-title">ATS Match Score</div>
+          <div class="badge-row">
+            <span class="archetype-badge" id="existingArchetypeBadge">ARCHETYPE</span>
+            <span class="status-pill-badge" id="existingLifecycleBadge">PREPARED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matched Skills -->
+      <div class="keywords-block">
+        <div class="section-title">Matched Skills (<span id="existingMatchedCount">0</span>)</div>
+        <div id="existingMatchedKeywords" class="chips-container"></div>
+      </div>
+
+      <!-- Action Tools -->
+      <div class="actions-grid">
+        <button id="existingOpenPdfBtn" class="btn btn-primary">
+          <span class="btn-icon">📄</span>
+          <span class="btn-label">View PDF (Tab)</span>
+        </button>
+        <button id="existingOpenFolderBtn" class="btn btn-secondary">
+          <span class="btn-icon">📁</span>
+          <span class="btn-label">Open Folder</span>
+        </button>
+        <button id="existingAutofillBtn" class="btn btn-accent">
+          <span class="btn-icon">✨</span>
+          <span class="btn-label">Autofill Form</span>
+        </button>
+        <button id="existingCopyAnswersBtn" class="btn btn-secondary">
+          <span class="btn-icon">📋</span>
+          <span class="btn-label">Copy Answers</span>
+        </button>
+      </div>
+
+      <!-- Submission Gate (If not submitted yet) -->
+      <div id="existingSubmissionGate" class="submission-gate-box">
+        <div class="gate-label">Ready to record your submission?</div>
+        <input type="text" id="existingReceiptInput" placeholder="Confirmation # or notes (optional)" class="input-field mb-2">
+        <button id="existingMarkAppliedBtn" class="btn btn-applied w-full">
+          <span>✅ Mark as Applied (Sync Notion)</span>
+        </button>
+      </div>
+
+      <!-- Submission Success Notice (If already submitted) -->
+      <div id="existingAppliedNotice" class="sync-notice hidden">
+        <span>🎉 Applied & Recorded in SQLite & Notion!</span>
+        <div id="existingReceiptDisplay" class="receipt-pill"></div>
+      </div>
+
+      <!-- Subtle Re-tailor Link -->
+      <div class="reset-row">
+        <a href="#" id="forceRetailorLink" class="subtle-link">🔄 Force Re-tailor (Generate New Version)</a>
+      </div>
+    </div>
+
+    <!-- STAGE 1: Check Fit & Score (For fresh jobs) -->
+    <div id="stage1Section">
+      <button id="checkFitBtn" class="btn btn-primary w-full btn-lg">
+        <span class="btn-icon">🔍</span>
+        <span>Check Fit & Score</span>
+      </button>
+      <div class="hint-text">Instant preview (zero DB clutter until you decide to apply).</div>
+    </div>
+
+    <!-- STAGE 2: Score Preview & Candidate Decision Gate -->
+    <div id="stage2Section" class="hidden">
+      <div class="score-banner">
+        <div class="score-ring">
+          <span id="scoreVal">--%</span>
+        </div>
+        <div class="score-details">
+          <div class="score-title">ATS Match Score</div>
+          <div class="archetype-badge" id="archetypeBadge">ARCHETYPE</div>
+        </div>
+      </div>
+
+      <!-- Keywords Breakdown -->
+      <div class="keywords-block">
+        <div class="section-title">Matched Skills (<span id="matchedCount">0</span>)</div>
+        <div id="matchedKeywords" class="chips-container"></div>
+      </div>
+
+      <div class="keywords-block" id="missingBlock">
+        <div class="section-title">Missing / Bonus Skills</div>
+        <div id="missingKeywords" class="chips-container"></div>
+      </div>
+
+      <!-- Candidate Decision Buttons -->
+      <div class="decision-box">
+        <div class="decision-label">Do you want to apply to this role?</div>
+        <div class="decision-grid">
+          <button id="applyConfirmBtn" class="btn btn-accent">
+            <span>🚀 I Want to Apply!</span>
+          </button>
+          <button id="skipBtn" class="btn btn-secondary">
+            <span>✕ Skip</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 3: Newly Tailored & Application Ready -->
+    <div id="stage3Section" class="hidden">
+      <div class="success-banner">
+        <span class="success-icon">📄</span>
+        <div class="success-text">
+          <strong>Resume Tailored & Ready!</strong>
+          <span id="applicationIdText" class="sub-text"></span>
+        </div>
+      </div>
+
+      <!-- Action Tools -->
+      <div class="actions-grid">
+        <button id="openPdfBtn" class="btn btn-primary">
+          <span class="btn-icon">📄</span>
+          <span class="btn-label">View PDF (Tab)</span>
+        </button>
+        <button id="openFolderBtn" class="btn btn-secondary">
+          <span class="btn-icon">📁</span>
+          <span class="btn-label">Open Folder</span>
+        </button>
+        <button id="autofillBtn" class="btn btn-accent">
+          <span class="btn-icon">✨</span>
+          <span class="btn-label">Autofill Form</span>
+        </button>
+        <button id="copyAnswersBtn" class="btn btn-secondary">
+          <span class="btn-icon">📋</span>
+          <span class="btn-label">Copy Answers</span>
+        </button>
+      </div>
+
+      <!-- Submission Gate Section -->
+      <div class="submission-gate-box">
+        <div class="gate-label">Once you submit on the job board:</div>
+        <input type="text" id="receiptInput" placeholder="Confirmation # (optional)" class="input-field mb-2">
+        <button id="markAppliedBtn" class="btn btn-applied w-full">
+          <span>✅ I Have Applied! (Store in DB & Notion)</span>
+        </button>
+      </div>
+
+      <div id="appliedSuccessNotice" class="sync-notice hidden">
+        <span>🎉 Logged as SUBMITTED in SQLite & Notion!</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <span class="hub-info">Hub: 127.0.0.1:8765</span>
+      <a href="#" id="reloadJobBtn">🔄 Rescan Tab</a>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
