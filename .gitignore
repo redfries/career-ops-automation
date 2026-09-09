@@ -1,0 +1,22 @@
+# Environment & Credentials
+.env
+*.key
+
+# Application Bundles & Local Builds
+applications/
+*.pdf
+*.aux
+*.log
+*.out
+*.synctex.gz
+
+# Python & System Cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip
+

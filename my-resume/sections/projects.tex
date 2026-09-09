@@ -1,0 +1,60 @@
+%-------------------------------------------------------------------------------
+%	SECTION TITLE
+%-------------------------------------------------------------------------------
+\cvsection{Projects}
+
+
+%-------------------------------------------------------------------------------
+%	CONTENT
+%-------------------------------------------------------------------------------
+\begin{cventries}
+
+%---------------------------------------------------------
+  \cventry
+    {Masters Research Project · KFUPM} % Type
+    {Personalized Reading Experience} % Project name
+    {\href{https://infinitys.me/pre}{infinitys.me/pre}} % Link
+    {2025 – 2026} % Date(s)
+    {
+      \begin{cvitems}
+        \item {Built a full-stack RAG-based AI reading assistant that semantically highlights relevant sentences in research PDFs against a user-defined interest profile using embedding similarity, not keyword matching.}
+        \item {Fused multi-source profile representations (topics, keywords, free text, seed papers) using weighted-mean sentence embeddings with \texttt{all-mpnet-base-v2}.}
+        \item {Integrated per-sentence LLM explanations via Google Gemini, surfacing \textit{why} each sentence was flagged as relevant to the reader's work.}
+        \item {Designed structured prompt templates for Gemini and evaluated model response alignment against user interest profiles.}
+        \item {Deployed on Modal GPU infrastructure; FastAPI backend, web frontend — supports both GPU and CPU inference paths transparently.}
+        \item {Designed local-first with portable JSON profiles — no accounts, no tracking, runs entirely on the user's own environment.}
+      \end{cvitems}
+    }
+
+%---------------------------------------------------------
+  \cventry
+    {Masters Research Project · KFUPM} % Type
+    {Arabic Cheque OCR} % Project name
+    {\href{https://infinitys.me/ocr}{infinitys.me/ocr}} % Link
+    {2025 – 2026} % Date(s)
+    {
+      \begin{cvitems}
+        \item {Engineered a three-stage pipeline — detect, read, and cross-validate — for both the numeric and handwritten monetary fields on Arabic bank cheques.}
+        \item {Achieved \textbf{97.5\% field detection accuracy} (IoU $\geq$ 0.50) using Cascade R-CNN with ResNet-50 + FPN, and \textbf{87.79\% exact-match accuracy} on digit recognition with a custom CRNN + BiLSTM + CTC model.}
+        \item {Fine-tuned Qwen3.5-0.8B vision-language model with LoRA for handwritten Arabic legal-text OCR — a domain with virtually no prior automated solutions.}
+        \item {Deployed a live Streamlit demo on Modal (A10G GPU) with both CLI and web UI interfaces for batch and single-image processing.}
+      \end{cvitems}
+    }
+
+%---------------------------------------------------------
+  \cventry
+    {AI Research Project · KFUPM BRAIN Lab} % Type
+    {ReSeeAI — AI-Based Retinal Disease Detection} % Project name
+    {\href{https://github.com/BRAIN-Lab-AI/ReSeeAI-AI-Based-Retinal-Disease-Detection}{github.com/BRAIN-Lab-AI/ReSeeAI}} % Link
+    {2024 – 2025} % Date(s)
+    {
+      \begin{cvitems}
+        \item {Fine-tuned RETFound (ViT-Large-Patch16) retinal foundation model for disease detection on fundus and OCT imaging datasets.}
+        \item {Reached \textbf{92\% accuracy on fundus} and \textbf{94\% on OCT} via full fine-tuning — up from a 56.6\% linear probe baseline.}
+        \item {Evaluated four fine-tuning strategies (linear probe, partial, full, adapters) to identify the optimal approach under limited medical imaging data constraints.}
+        \item {Integrated Grad-CAM visualizations to surface which retinal regions drive predictions, supporting clinical interpretability of model decisions.}
+      \end{cvitems}
+    }
+
+%---------------------------------------------------------
+\end{cventries}

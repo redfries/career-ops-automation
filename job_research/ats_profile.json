@@ -1,0 +1,124 @@
+{
+  "personal": {
+    "first_name": "Shabaaz",
+    "last_name": "Hussain Shaik",
+    "preferred_name": "Shabaaz",
+    "email": "theshabaaz@outlook.com",
+    "secondary_email": "studioinfinitys@gmail.com",
+    "phone_ksa": "+966 50 269 8140",
+    "city": "Dhahran",
+    "state": "Eastern Province",
+    "country": "Saudi Arabia",
+    "postal_code": "31261",
+    "portfolio": "https://infinitys.me",
+    "github": "https://github.com/redfries",
+    "linkedin": "https://www.linkedin.com/in/redfries/",
+    "relocation": true,
+    "remote_preference": "Remote or Hybrid"
+  },
+  "work_authorization": {
+    "saudi_arabia": {
+      "authorized": true,
+      "sponsorship_required": false,
+      "details": "Resident on transferable KFUPM Iqama upon graduation"
+    },
+    "uae": {
+      "authorized": true,
+      "sponsorship_required": true,
+      "details": "Eligible for employment visa sponsorship / remote contractor"
+    },
+    "india": {
+      "authorized": true,
+      "sponsorship_required": false,
+      "details": "Citizen of India"
+    },
+    "global_remote": {
+      "authorized": true,
+      "sponsorship_required": false,
+      "details": "Available for B2B contractor / Deel / Remote.com payroll"
+    }
+  },
+  "compensation": {
+    "ksa_monthly_sar": "12000 - 16000",
+    "uae_monthly_aed": "12000 - 18000",
+    "india_annual_inr": "14 - 22 LPA",
+    "remote_annual_usd": "60000 - 90000",
+    "notice_period": "Immediate (graduating 2026)"
+  },
+  "education": [
+    {
+      "institution": "King Fahd University of Petroleum & Minerals (KFUPM)",
+      "degree": "Master of Science",
+      "major": "Artificial Intelligence",
+      "gpa": "3.5 / 4.0",
+      "start_date": "2024-08",
+      "end_date": "2026-06",
+      "location": "Dhahran, Saudi Arabia"
+    },
+    {
+      "institution": "Jawaharlal Nehru Technological University Anantapur (JNTUA)",
+      "degree": "Bachelor of Technology",
+      "major": "Computer Science & Engineering",
+      "gpa": "7.5 / 10.0",
+      "start_date": "2018-08",
+      "end_date": "2022-05",
+      "location": "India"
+    }
+  ],
+  "experience": [
+    {
+      "title": "Graduate Teaching Assistant (AI & Computer Science)",
+      "company": "King Fahd University of Petroleum & Minerals",
+      "location": "Dhahran, Saudi Arabia",
+      "start_date": "2024-08",
+      "end_date": "Present",
+      "highlights": [
+        "Mentored 80+ engineering students in Python, machine learning algorithms, and deep learning implementations.",
+        "Conducted weekly hands-on laboratory sessions covering PyTorch model training, data preprocessing, and evaluation metrics.",
+        "Collaborated with AI faculty on research benchmarks and automated assignment grading pipelines."
+      ]
+    },
+    {
+      "title": "Systems Engineer (Python Automation & Delivery)",
+      "company": "Tata Consultancy Services (TCS)",
+      "location": "Hyderabad / Bengaluru, India",
+      "start_date": "2022-02",
+      "end_date": "2023-12",
+      "highlights": [
+        "Engineered Python automation scripts and pipeline monitors, reducing manual verification cycles by 40%.",
+        "Implemented automated UI and service-level test suites using Vision AI and Python test harnesses.",
+        "Collaborated with cross-functional software teams across global time zones, managing defect lifecycles and CI/CD quality gates."
+      ]
+    }
+  ],
+  "technical_skills": {
+    "ai_ml": [
+      "Deep Learning",
+      "Computer Vision",
+      "Natural Language Processing",
+      "Vision Transformers (ViT)",
+      "PyTorch",
+      "Hugging Face",
+      "LoRA Fine-Tuning",
+      "RETFound",
+      "Qwen3.5 VLM",
+      "Sentence-Transformers",
+      "Grad-CAM"
+    ],
+    "languages_and_backend": [
+      "Python",
+      "FastAPI",
+      "Streamlit",
+      "SQL",
+      "REST APIs",
+      "JavaScript"
+    ],
+    "tools_and_infra": [
+      "Docker",
+      "Linux",
+      "Git",
+      "Modal GPU",
+      "Jupyter"
+    ]
+  }
+}

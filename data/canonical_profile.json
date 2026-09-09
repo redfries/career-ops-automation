@@ -1,0 +1,268 @@
+{
+  "schema_version": "2.0.0",
+  "last_verified": "2026-09-09",
+  "candidate": {
+    "name": "Shabaaz Hussain Shaik",
+    "first_name": "Shabaaz",
+    "last_name": "Hussain Shaik",
+    "preferred_name": "Shabaaz",
+    "email": "theshabaaz@outlook.com",
+    "phone": "+966 50 269 8140",
+    "location": {
+      "city": "Dhahran",
+      "country": "Saudi Arabia",
+      "postal_code": "31261",
+      "relocation": true,
+      "remote_preference": "Remote or Hybrid"
+    },
+    "links": {
+      "portfolio": "https://infinitys.me",
+      "github": "https://github.com/redfries",
+      "linkedin": "https://www.linkedin.com/in/redfries/"
+    }
+  },
+  "work_authorization": {
+    "saudi_arabia": {
+      "authorized": true,
+      "sponsorship_required": false,
+      "status": "Resident",
+      "details": "Transferable KFUPM student/resident Iqama for employment"
+    },
+    "india": {
+      "authorized": true,
+      "sponsorship_required": false,
+      "status": "Citizen",
+      "details": "Indian passport holder with full citizen work rights"
+    },
+    "uae": {
+      "authorized": true,
+      "sponsorship_required": true,
+      "status": "Eligible for employment visa",
+      "details": "Requires standard employer UAE employment visa sponsorship"
+    },
+    "global_remote": {
+      "authorized": true,
+      "sponsorship_required": false,
+      "status": "Eligible",
+      "details": "Available for direct B2B contractor, Deel, or Remote.com"
+    },
+    "united_states": {
+      "authorized": false,
+      "sponsorship_required": true,
+      "status": "Ineligible without visa",
+      "details": "Requires H-1B or O-1 sponsorship; no US security clearance"
+    },
+    "european_union": {
+      "authorized": false,
+      "sponsorship_required": true,
+      "status": "Ineligible without visa",
+      "details": "Requires EU Blue Card or national work permit sponsorship"
+    }
+  },
+  "education": [
+    {
+      "institution": "King Fahd University of Petroleum & Minerals (KFUPM)",
+      "location": "Dhahran, Saudi Arabia",
+      "degree": "Master of Science",
+      "major": "Artificial Intelligence",
+      "gpa": "3.5 / 4.0",
+      "start_date": "2024-08",
+      "end_date": "2026-06",
+      "status": "Pursuing (Expected June 2026)",
+      "coursework": [
+        "Deep Learning",
+        "Computer Vision",
+        "Natural Language Processing",
+        "Machine Learning Algorithms"
+      ]
+    },
+    {
+      "institution": "Jawaharlal Nehru Technological University Anantapur (JNTUA)",
+      "location": "Ananthapuramu, India",
+      "degree": "Bachelor of Technology",
+      "major": "Computer Science & Engineering",
+      "gpa": "7.5 / 10.0",
+      "start_date": "2018-08",
+      "end_date": "2022-05",
+      "status": "Graduated"
+    }
+  ],
+  "professional_experience": [
+    {
+      "id": "exp_kfupm_ga",
+      "provenance": "academic_employment",
+      "employer": "King Fahd University of Petroleum & Minerals (KFUPM)",
+      "official_title": "Graduate Assistant",
+      "location": "Dhahran, Saudi Arabia",
+      "start_date": "2024-10",
+      "end_date": "2026-04",
+      "duration_months": 18,
+      "scope": "Operations and CS Academic Instruction",
+      "verified_bullets": [
+        "Consolidated fragmented physical inventory records into a structured Excel database, assisting in campus-wide registry cleanup.",
+        "Built dynamic pivot-table dashboards and prepared monthly asset reports to support department-level procurement planning.",
+        "Reconciled procurement records against active inventory using Excel formulas, identifying mismatches and standardizing data templates.",
+        "Conducted weekly tutorial and lab problem-solving sessions for undergraduate computer science courses as a Graduate Teaching Assistant.",
+        "Evaluated and graded programming assignments, lab reports, and exams, delivering actionable feedback to improve student learning."
+      ]
+    },
+    {
+      "id": "exp_tcs_qa",
+      "provenance": "commercial_industry_employment",
+      "employer": "Tata Consultancy Services (TCS)",
+      "official_title": "QA Engineer",
+      "corporate_band": "Systems Engineer",
+      "location": "Hyderabad, India",
+      "start_date": "2022-02",
+      "end_date": "2023-12",
+      "duration_months": 22,
+      "scope": "Salesforce Quality Assurance & Test Automation",
+      "verified_bullets": [
+        "Automated UI regression tests for Salesforce applications using Tosca, significantly reducing manual regression cycles.",
+        "Conducted manual functional testing and exploratory testing for new features, ensuring zero critical defects reached production.",
+        "Collaborated closely with cross-functional development teams and business analysts to analyze requirements and design comprehensive test scenarios.",
+        "Leveraged Tosca Vision AI to scan visual elements inside Citrix virtualized environments, resolving complex automation challenges.",
+        "Managed defect lifecycle end-to-end, tracking issues in qTest and reporting daily status updates directly to global clients."
+      ]
+    }
+  ],
+  "academic_and_research_projects": [
+    {
+      "id": "proj_pre",
+      "provenance": "masters_research_kfupm",
+      "title": "Personalized Reading Experience",
+      "type": "Masters Research Project",
+      "institution": "KFUPM",
+      "years": "2025 \u2013 2026",
+      "url": "https://infinitys.me/pre",
+      "tags": [
+        "RAG",
+        "LLM",
+        "FastAPI",
+        "Modal GPU",
+        "Sentence-Transformers",
+        "Gemini API"
+      ],
+      "verified_bullets": [
+        "Built a full-stack RAG-based AI reading assistant that semantically highlights relevant sentences in research PDFs against a user-defined interest profile using embedding similarity, not keyword matching.",
+        "Fused multi-source profile representations (topics, keywords, free text, seed papers) using weighted-mean sentence embeddings with all-mpnet-base-v2.",
+        "Integrated per-sentence LLM explanations via Google Gemini, surfacing why each sentence was flagged as relevant to the reader's work.",
+        "Designed structured prompt templates for Gemini and evaluated model response alignment against user interest profiles.",
+        "Deployed on Modal GPU infrastructure; FastAPI backend, web frontend \u2014 supports both GPU and CPU inference paths transparently.",
+        "Designed local-first with portable JSON profiles \u2014 no accounts, no tracking, runs entirely on the user's own environment."
+      ]
+    },
+    {
+      "id": "proj_arabic_ocr",
+      "provenance": "masters_research_kfupm",
+      "title": "Arabic Cheque OCR",
+      "type": "Masters Research Project",
+      "institution": "KFUPM",
+      "years": "2025 \u2013 2026",
+      "url": "https://infinitys.me/ocr",
+      "tags": [
+        "Computer Vision",
+        "Cascade R-CNN",
+        "CRNN",
+        "CTC Loss",
+        "Qwen3.5 VLM",
+        "LoRA",
+        "Modal GPU",
+        "Streamlit"
+      ],
+      "verified_bullets": [
+        "Engineered a three-stage pipeline \u2014 detect, read, and cross-validate \u2014 for both the numeric and handwritten monetary fields on Arabic bank cheques.",
+        "Achieved 97.5% field detection accuracy (IoU >= 0.50) using Cascade R-CNN with ResNet-50 + FPN, and 87.79% exact-match accuracy on digit recognition with a custom CRNN + BiLSTM + CTC model.",
+        "Fine-tuned Qwen3.5-0.8B vision-language model with LoRA for handwritten Arabic legal-text OCR \u2014 a domain with virtually no prior automated solutions.",
+        "Deployed a live Streamlit demo on Modal (A10G GPU) with both CLI and web UI interfaces for batch and single-image processing."
+      ]
+    },
+    {
+      "id": "proj_reseeai",
+      "provenance": "lab_research_kfupm_brain",
+      "title": "ReSeeAI \u2014 AI-Based Retinal Disease Detection",
+      "type": "AI Research Project",
+      "institution": "KFUPM BRAIN Lab",
+      "years": "2024 \u2013 2025",
+      "url": "https://github.com/BRAIN-Lab-AI/ReSeeAI-AI-Based-Retinal-Disease-Detection",
+      "tags": [
+        "Vision Transformers",
+        "RETFound",
+        "PyTorch",
+        "Medical Imaging",
+        "Grad-CAM",
+        "Transfer Learning"
+      ],
+      "verified_bullets": [
+        "Fine-tuned RETFound (ViT-Large-Patch16) retinal foundation model for disease detection on fundus and OCT imaging datasets.",
+        "Reached 92% accuracy on fundus and 94% on OCT via full fine-tuning \u2014 up from a 56.6% linear probe baseline.",
+        "Evaluated four fine-tuning strategies (linear probe, partial, full, adapters) to identify the optimal approach under limited medical imaging data constraints.",
+        "Integrated Grad-CAM visualizations to surface which retinal regions drive predictions, supporting clinical interpretability of model decisions."
+      ]
+    }
+  ],
+  "skills_taxonomy": {
+    "ai_machine_learning": [
+      "Computer Vision",
+      "NLP",
+      "Vision Transformers (ViT)",
+      "PyTorch",
+      "scikit-learn",
+      "OpenCV",
+      "LLMs",
+      "LoRA / PEFT Fine-Tuning",
+      "Cascade R-CNN",
+      "CRNN",
+      "RETFound"
+    ],
+    "genai_agentic": [
+      "LangChain",
+      "LangGraph",
+      "RAG Pipelines",
+      "Hugging Face",
+      "ChromaDB",
+      "FAISS",
+      "Agentic AI",
+      "Gemini API",
+      "Prompt Engineering"
+    ],
+    "software_backend": [
+      "Python",
+      "FastAPI",
+      "Streamlit",
+      "REST APIs",
+      "Pandas",
+      "SQL",
+      "JavaScript"
+    ],
+    "quality_and_automation": [
+      "Test Automation",
+      "Tosca",
+      "Tosca Vision AI",
+      "Regression Testing",
+      "qTest",
+      "Salesforce QA"
+    ],
+    "tools_and_infra": [
+      "Git",
+      "Linux",
+      "Jupyter",
+      "Modal GPU",
+      "MS Excel",
+      "LaTeX (XeTeX/Tectonic)"
+    ],
+    "spoken_languages": [
+      "English (Fluent)",
+      "Telugu (Fluent)",
+      "Urdu (Fluent)",
+      "Arabic (Conversational)"
+    ]
+  },
+  "anti_hallucination_rules": [
+    "NEVER claim commercial production AI engineering experience at TCS (role was QA Engineer on Salesforce).",
+    "NEVER invent commercial clients or products for KFUPM research projects (PRE, OCR, ReSeeAI are academic/lab research).",
+    "NEVER cite DEFCON, CODEGATE, or Korean awards (those belong to quarantined template examples).",
+    "Strictly distinguish mandatory from preferred job requirements in evaluations.",
+    "Never state US or EU authorization without explicit visa sponsorship."
+  ]
+}
