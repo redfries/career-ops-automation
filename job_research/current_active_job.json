@@ -1,0 +1,30 @@
+{
+  "timestamp": "2026-09-10T02:58:02.060027",
+  "company": "Target Employer",
+  "role": "Forward Deployed Engineer",
+  "url": "https://job-boards.greenhouse.io/llrpartnersjobs/jobs/4399904009",
+  "ats_score": 88.9,
+  "archetype": "rag",
+  "matched_keywords": [
+    "Computer Vision",
+    "RAG Pipelines",
+    "LLMs",
+    "LangGraph",
+    "Prompt Engineering",
+    "Python",
+    "Streamlit",
+    "Git"
+  ],
+  "missing_keywords": [
+    "Vector Embeddings"
+  ],
+  "pdf_path": "C:\\Users\\lords\\OneDrive\\Documents\\career-ops-automation\\applications\\2026-09-10_target-employer_forward-deployed-engineer\\resume.pdf",
+  "bundle_dir": "C:\\Users\\lords\\OneDrive\\Documents\\career-ops-automation\\applications\\2026-09-10_target-employer_forward-deployed-engineer",
+  "screener_answers": {
+    "technical_summary": "I have extensive hands-on experience in applied machine learning, computer vision, and backend systems. My technical stack directly aligns with Target Employer's requirements in Computer Vision, RAG Pipelines, LLMs, LangGraph, Prompt Engineering. At KFUPM, I engineered high-precision OCR models (Cascade R-CNN, CRNN) and RAG applications on GPU microservices. Combined with 22 months of commercial test automation at TCS, I deliver reliable, production-tested AI solutions.",
+    "work_authorization": "Authorized to work in Saudi Arabia (Resident on transferable KFUPM Iqama for employment). Indian citizen. Also eligible for Global Remote contractor / Deel engagements.",
+    "years_experience": "2+ years professional software/QA experience + 2 years academic AI research (Masters in AI at KFUPM).",
+    "notice_period": "Immediate / Negotiable.",
+    "portfolio_links": "Portfolio: https://infinitys.me | GitHub: https://github.com/redfries | LinkedIn: https://www.linkedin.com/in/redfries/"
+  }
+}

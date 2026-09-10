@@ -20,6 +20,7 @@ from typing import Dict, Any, List, Optional
 
 VALID_STATUSES = [
     "discovered",
+    "visited",
     "ingestion_uncertain",
     "needs_review",
     "ineligible",
@@ -339,6 +340,44 @@ def seed_from_legacy_tracker(tracker_path: Path, db_path: Optional[Path] = None)
             count += 1
 
     return count
+
+def is_url_visited(url: str, db_path: Optional[Path] = None) -> bool:
+    """Checks if a URL has already been visited, evaluated, or submitted."""
+    if not url:
+        return False
+    clean_url = url.strip().rstrip("/")
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, status FROM applications 
+        WHERE canonical_url = ? OR source_url = ?
+        LIMIT 1
+    """, (clean_url, clean_url))
+    row = cursor.fetchone()
+    conn.close()
+    return bool(row)
+
+def mark_url_visited(url: str, company: str = "Unknown", role: str = "Job Posting", db_path: Optional[Path] = None) -> str:
+    """Marks a URL as visited so it will never be fetched or evaluated again."""
+    if not url:
+        return ""
+    clean_url = url.strip().rstrip("/")
+    if is_url_visited(clean_url, db_path):
+        return ""
+    
+    app_id = f"visited_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{abs(hash(clean_url)) % 100000}"
+    now_iso = datetime.now().isoformat()
+    upsert_application({
+        "id": app_id,
+        "company": company,
+        "role": role,
+        "source_url": clean_url,
+        "canonical_url": clean_url,
+        "status": "visited",
+        "created_at": now_iso,
+        "updated_at": now_iso
+    }, db_path)
+    return app_id
 
 def main():
     parser = argparse.ArgumentParser(description="Authoritative SQLite Database Manager for Job Applications.")

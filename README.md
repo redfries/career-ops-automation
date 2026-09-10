@@ -53,11 +53,16 @@ career-ops-automation/
 ├── .agents/
 │   └── skills/job-hunter-firecrawl/SKILL.md  # Agent skill instructions & evaluation prompts
 ├── scripts/
+│   ├── run_batch.py                           # Master chat cockpit & batch application orchestrator
+│   ├── firecrawl_job_hunter.py                # Multi-portal sourcing (ATS + Gulf: Indeed KSA/UAE, Bayt)
+│   ├── autonomous_browser_agent.py            # Playwright visible headed submitter (Option 3 verified)
+│   ├── deep_reach.py                          # 1-Click LinkedIn decision-maker & 300-char pitch generator
+│   ├── fast_ats_tailor.py                     # Sub-second single-column ATS resume compiler & validator
 │   ├── compile_tailored_resume.py             # Collision-proof LaTeX builder & stager
 │   ├── pdf_validator.py                       # Binary, structural & text stream validator
-│   ├── db_manager.py                          # SQLite store manager & Markdown exporter
+│   ├── db_manager.py                          # SQLite store manager (with permanent visited gate)
 │   ├── sync_to_notion.py                      # Resilient Notion synchronization bridge
-│   └── test_pipeline_resilience.py            # Automated 8-test edge case suite
+│   └── test_pipeline_resilience.py            # Automated 9-test edge case suite
 ├── data/
 │   ├── canonical_profile.json                 # Immutable candidate single source of truth
 │   ├── canonical_profile.md                   # Human-readable evidence boundaries
