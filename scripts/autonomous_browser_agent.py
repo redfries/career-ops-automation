@@ -329,6 +329,73 @@ class AIBrowserAgent:
         print("  [INFO] Continuing workflow...")
         return False
 
+    def check_and_handle_challenge(self, page: Page, max_wait: int = 90) -> bool:
+        """
+        Detects Cloudflare turnstile, bot-block, or login wall and pauses for HITL resolution.
+        """
+        title_lower = page.title().lower()
+        content_sample = ""
+        try:
+            content_sample = page.inner_text("body")[:500].lower()
+        except Exception:
+            pass
+
+        if "blocked" in title_lower or "just a moment" in title_lower or "attention required" in title_lower or "security check" in title_lower or "verify you are human" in content_sample:
+            print("\n" + "!"*65)
+            print("🔔 [HUMAN-IN-THE-LOOP: BOT CHALLENGE / CAPTCHA DETECTED]")
+            print(f"Target page title: '{page.title()}'")
+            print("Please solve the verification challenge in the open browser window.")
+            print(f"Pausing automation for up to {max_wait}s to allow manual verification...")
+            print("!"*65 + "\n")
+            start_t = time.time()
+            while time.time() - start_t < max_wait:
+                time.sleep(2.0)
+                cur_title = page.title().lower()
+                if "blocked" not in cur_title and "just a moment" not in cur_title and "attention required" not in cur_title:
+                    print(f"  [OK] Challenge resolved! Page title: '{page.title()}'. Resuming automation...")
+                    time.sleep(2.0)
+                    return True
+            print("  [WARN] Challenge still present after timeout. Proceeding...")
+            return False
+        return True
+
+    def check_and_click_job_board_apply(self, page: Page, context: BrowserContext) -> Page:
+        """If on a job listing aggregator (Indeed, Bayt, LinkedIn), clicks 'Apply' to reach application form."""
+        apply_selectors = [
+            '#indeedApplyButton',
+            'button[id*="indeedApply" i]',
+            'button:has-text("Apply on company site")',
+            'a:has-text("Apply on company site")',
+            'button:has-text("Apply now")',
+            'a:has-text("Apply now")',
+            'a[data-tn-element="indeedApplyButton"]',
+            'button:has-text("Easy Apply")',
+            'button:has-text("Apply")',
+            'a:has-text("Apply")'
+        ]
+        for sel in apply_selectors:
+            try:
+                btn = page.query_selector(sel)
+                if btn and btn.is_visible() and btn.is_enabled():
+                    print(f"  [CLICK] Found job board apply trigger: '{sel}'. Clicking...")
+                    initial_pages = len(context.pages)
+                    try:
+                        btn.click()
+                    except Exception:
+                        continue
+                    time.sleep(2.5)
+                    if len(context.pages) > initial_pages:
+                        new_page = context.pages[-1]
+                        new_page.wait_for_load_state("domcontentloaded")
+                        print(f"  [NAV] New application tab opened: {new_page.url[:60]}...")
+                        return new_page
+                    else:
+                        print(f"  [NAV] Continuing on active page: {page.url[:60]}...")
+                        return page
+            except Exception:
+                pass
+        return page
+
     def run_submission(
         self,
         job_url: str,
@@ -371,12 +438,25 @@ class AIBrowserAgent:
                 viewport={"width": 1280, "height": 900},
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             )
+            context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             page = context.new_page()
 
             try:
                 print(f"\n[NAVIGATE] Opening application page...")
                 page.goto(job_url, timeout=45000, wait_until="domcontentloaded")
                 time.sleep(1.5)
+
+                # Check for Cloudflare / bot challenge
+                self.check_and_handle_challenge(page)
+
+                # If on job board aggregator, trigger apply link
+                page = self.check_and_click_job_board_apply(page, context)
+                time.sleep(1.0)
+
+                # Re-detect portal from current active URL
+                portal = self.detect_portal(page.url)
+                if portal != "generic":
+                    print(f"  [PORTAL DETECTED] Resolved to {portal.upper()} handler.")
 
                 if portal == "greenhouse":
                     self.apply_greenhouse(page, pdf_path, screener_answers)
