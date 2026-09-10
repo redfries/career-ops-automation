@@ -82,25 +82,23 @@ career-ops-automation/
 
 ---
 
-## 3. Quick Start & Prerequisites
+## 3. Quick Start: Starting the Engine
 
 ### Prerequisites
-* **Python 3.10+** (with `pymupdf` installed: `pip install pymupdf`)
+* **Python 3.10+** (with `pymupdf` and `playwright` installed)
+* **Playwright Chromium** (`playwright install chromium`)
 * **Tectonic XeTeX** (fast XeTeX engine installed or available on PATH)
-* **Git & GitHub CLI (`gh`)**
 
-### 1-Minute Setup
+### 1-Click Launch
+Launch the unified interactive Human-in-the-Loop Cockpit:
 ```powershell
-# 1. Clone or navigate to the repository
-cd career-ops-automation
+# Interactive Cockpit (Menu with all actions):
+python start_engine.py
 
-# 2. Copy the environment configuration
-cp .env.example .env
-# Edit .env with your NOTION_API_KEY and NOTION_DATABASE_ID
-
-# 3. Verify pipeline health across all 8 resilience tests
-python -u scripts/test_pipeline_resilience.py
+# Or double-click start_engine.bat on Windows!
 ```
+
+> 📖 **Comprehensive Guide**: See [`ENGINE_RUNBOOK.md`](ENGINE_RUNBOOK.md) for full operational instructions, decision trees, and troubleshooting.
 
 ---
 

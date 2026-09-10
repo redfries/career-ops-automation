@@ -438,6 +438,8 @@ class CareerOpsBridgeHandler(BaseHTTPRequestHandler):
             if env.get("NOTION_API_KEY") and env.get("NOTION_DATABASE_ID"):
                 sync_res = sync_applications_to_notion(env["NOTION_API_KEY"], env["NOTION_DATABASE_ID"], root_dir=ROOT_DIR)
                 self._respond_json(200, sync_res)
+            else:
+                self._respond_json(400, {"success": False, "error": "NOTION_API_KEY or NOTION_DATABASE_ID not configured"})
         elif parsed.path == "/api/mark-applied":
             app_id = payload.get("application_id", "")
             receipt = payload.get("receipt", "").strip() or f"DIRECT-SUBMIT-{datetime.now().strftime('%Y%m%d%H%M')}"

@@ -3,7 +3,7 @@
 > **Notice**: This file is an auto-generated view from the authoritative SQLite database (`data/applications.db`).
 > To modify statuses or records, use `scripts/db_manager.py` or the Career-Ops pipeline.
 
-*Last regenerated: 2026-09-10 22:31:09*
+*Last regenerated: 2026-09-10 23:15:07*
 
 | # | Company | Role | Location | Platform | Source Link | Holistic Fit | Status | Date Added | Notes / Verified Bundle |
 | :- | :- | :- | :- | :- | :- | :- | :- | :- | :- |
@@ -15,7 +15,7 @@
 | 6 | **Target Employer** | Forward Deployed Engineer | Remote | Direct | [Link](https://job-boards.greenhouse.io/llrpartnersjobs/jobs/4399904009) | **4.4 / 5.0** | `prepared` | 2026-09-10 | Fast ATS tailored: rag focus. 88.9% keyword match. [Bundle: `2026-09-10_target-employer_forward-deployed-engineer`] |
 | 7 | **Hub Test Corp** | Computer Vision Engineer | Remote | Direct | Direct | **5.0 / 5.0** | `submitted` | 2026-09-10 | Fast ATS tailored: vision focus. 100.0% keyword match. |
 | 8 | **Test Corp Vision** | Computer Vision Engineer | Remote | Direct | Direct | **5.0 / 5.0** | `prepared` | 2026-09-10 | Fast ATS tailored: vision focus. 100.0% keyword match. [Bundle: `2026-09-10_test-corp-vision_computer-vision-engineer`] |
-| 9 | **Aramco Digital** | Computer Vision Engineer | Remote | Direct | Direct | **5.0 / 5.0** | `prepared` | 2026-09-10 | Fast ATS tailored: vision focus. 100.0% keyword match. |
+| 9 | **Aramco Digital** | Computer Vision Engineer | Remote | Direct | Direct | **5.0 / 5.0** | `prepared` | 2026-09-10 | Fast ATS tailored: vision focus. 100.0% keyword match. [Bundle: `2026-09-10_aramco-digital_computer-vision-engineer`] |
 | 10 | **Jobs for Humanity** | Full-Stack AI/ML Application Engineer | Dammam, Saudi Arabia | Bayt.com | [Link](https://www.bayt.com/en/saudi-arabia/jobs/full-stack-ai-ml-application-engineer-74977715/) | **4.7 / 5.0** | `prepared` | 2026-09-09 | Full package ready in [`applications/JobsForHumanity-Bayt_2026-09-09`](file:///c:/Users/lords/OneDrive/Documents/resume/applications/JobsForHumanity-Bayt_2026-09-09). PyTorch, FastAPI, LLM integration, Eastern Province local. |
 | 11 | **Wynd Labs** | Machine Learning Engineer | Remote (Global/EST) | Ashby | [Link](https://jobs.ashbyhq.com/wynd-labs/a148c710-7685-4184-9be8-c4d46a0a8f04/application) | **4.8 / 5.0** | `prepared` | 2026-09-07 | NLP, OCR pipelines, large-scale LLM datasets. Directly matches Arabic Cheque OCR project! |
 | 12 | **InnovationTeam** | Junior AI Engineer - Computer Vision | Riyadh / Remote (KSA) | Direct / Glassdoor | [Link](https://www.glassdoor.com/job-listing/junior-ai-engineer-computer-vision-innovationteam-JV_IC3110290_KO0,34_KE35,49.htm?jl=1010034192392) | **4.5 / 5.0** | `prepared` | 2026-09-07 | Computer vision systems, PyTorch, image processing. Early career / junior role in KSA. |
