@@ -1,0 +1,129 @@
+{
+  "total_jobs": 826,
+  "source_breakdown": {
+    "linkedin": 565,
+    "bayt": 173,
+    "indeed": 88
+  },
+  "geo_breakdown": {
+    "Riyadh, Saudi Arabia": 140,
+    "Eastern Province (Dhahran/Khobar/Dammam)": 32,
+    "Saudi Arabia (General / Multiple Cities)": 21,
+    "United States (Out of Region / No Visa Auth)": 173,
+    "Western Province (Jeddah/Mecca)": 19,
+    "UAE (Dubai / Abu Dhabi)": 440,
+    "Remote (Global/Contractor)": 1
+  },
+  "tech_demand": [
+    [
+      "Python",
+      371
+    ],
+    [
+      "LLMs / Generative AI",
+      293
+    ],
+    [
+      "Cloud (AWS/Azure/GCP)",
+      257
+    ],
+    [
+      "Data Analytics / BI (PowerBI/Tableau)",
+      214
+    ],
+    [
+      "Agentic AI / Orchestration",
+      193
+    ],
+    [
+      "MLOps / Pipelines",
+      164
+    ],
+    [
+      "PyTorch",
+      135
+    ],
+    [
+      "SQL",
+      127
+    ],
+    [
+      "Prompt Engineering",
+      124
+    ],
+    [
+      "TensorFlow / Keras",
+      114
+    ],
+    [
+      "NLP / Text Processing",
+      113
+    ],
+    [
+      "RAG (Retrieval-Augmented Generation)",
+      111
+    ],
+    [
+      "Deep Learning (General)",
+      96
+    ],
+    [
+      "Docker / Containers",
+      86
+    ],
+    [
+      "R",
+      70
+    ],
+    [
+      "Java/Scala",
+      70
+    ],
+    [
+      "Computer Vision (OpenCV/YOLO)",
+      63
+    ],
+    [
+      "Scikit-Learn",
+      55
+    ],
+    [
+      "Big Data (Spark/Databricks/Hadoop)",
+      46
+    ],
+    [
+      "C++",
+      0
+    ]
+  ],
+  "role_breakdown": [
+    [
+      "AI / Data Intern or Graduate Trainee",
+      173
+    ],
+    [
+      "Machine Learning / Deep Learning Engineer",
+      109
+    ],
+    [
+      "AI Engineer / GenAI Specialist",
+      106
+    ],
+    [
+      "Data Scientist",
+      75
+    ],
+    [
+      "Data Analyst / BI Specialist",
+      19
+    ],
+    [
+      "Computer Vision Engineer",
+      13
+    ],
+    [
+      "NLP / Conversational AI Engineer",
+      3
+    ]
+  ]
+}

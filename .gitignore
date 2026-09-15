@@ -17,6 +17,10 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Archives
+# Archives & Backups
 *.zip
+*.bak
+scratch_*.md
 
+data/browser_profile/
+
