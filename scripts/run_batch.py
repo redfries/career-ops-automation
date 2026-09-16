@@ -112,6 +112,9 @@ def main():
     parser.add_argument("--mode", type=str, choices=["assisted", "dry-run", "auto"], default="assisted", help="Apply execution mode")
     parser.add_argument("--tailor-job", type=str, help="Tailor a specific job ID")
     parser.add_argument("--apply-job", type=str, help="Apply to a specific job ID")
+    parser.add_argument("--email", type=str, help="Send tailored outreach email for a specific job ID")
+    parser.add_argument("--to", type=str, help="Recipient email address for outreach")
+    parser.add_argument("--force", action="store_true", help="Force resend email even if already dispatched")
 
     args = parser.parse_args()
 
@@ -127,6 +130,23 @@ def main():
     elif args.apply_job:
         cmd = [sys.executable, "scripts/browser_apply_engine.py", "--job-id", args.apply_job, "--mode", args.mode]
         subprocess.run(cmd)
+    elif args.email:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT application_folder FROM jobs WHERE id = ?", (args.email,))
+        row = cur.fetchone()
+        conn.close()
+
+        if not row or not row[0]:
+            print(f"⚠️ Application folder not found in database for job {args.email}. Run --tailor-job {args.email} first!")
+        else:
+            folder = row[0]
+            cmd = [sys.executable, "scripts/send_resend_email.py", "--app-dir", folder]
+            if args.to:
+                cmd.extend(["--to", args.to])
+            if args.force:
+                cmd.append("--force")
+            subprocess.run(cmd)
 
 if __name__ == "__main__":
     main()

@@ -30,25 +30,56 @@ def slugify(text: str) -> str:
 
 def extract_jd_keywords(jd_text: str):
     jd_lower = (jd_text or '').lower()
+    
+    # Specific technology matching
+    tech_matches = []
+    for tech in ['pytorch', 'tensorflow', 'opencv', 'transformers', 'vit', 'hugging face', 'langchain', 'llama-index', 'fastapi', 'docker', 'selenium', 'tosca', 'azure']:
+        if tech in jd_lower:
+            tech_matches.append(tech)
+
     keywords = {
-        'computer_vision': any(k in jd_lower for k in ['computer vision', 'opencv', 'image', 'object detection', 'segmentation', 'vit', 'vision transformer', 'ocr']),
-        'deep_learning': any(k in jd_lower for k in ['deep learning', 'pytorch', 'tensorflow', 'keras', 'neural networks', 'cnn', 'transformer']),
-        'nlp_llm': any(k in jd_lower for k in ['nlp', 'llm', 'rag', 'langchain', 'langgraph', 'prompt engineering', 'retrieval', 'vector', 'agentic']),
-        'data_science': any(k in jd_lower for k in ['data science', 'pandas', 'numpy', 'scikit-learn', 'statistics', 'eda', 'data analysis']),
-        'backend': any(k in jd_lower for k in ['fastapi', 'rest api', 'asyncio', 'docker', 'backend', 'microservices', 'sql', 'postgresql']),
-        'test_qa': any(k in jd_lower for k in ['qa', 'testing', 'automation testing', 'tosca', 'selenium', 'regression'])
+        'computer_vision': any(k in jd_lower for k in ['computer vision', 'opencv', 'image', 'object detection', 'segmentation', 'vit', 'vision transformer', 'ocr', 'cnn']),
+        'deep_learning': any(k in jd_lower for k in ['deep learning', 'pytorch', 'tensorflow', 'keras', 'neural network']),
+        'nlp_llm': any(k in jd_lower for k in ['nlp', 'llm', 'rag', 'langchain', 'prompt engineering', 'retrieval', 'vector', 'agentic', 'agent']),
+        'data_science': any(k in jd_lower for k in ['data science', 'pandas', 'numpy', 'scikit-learn', 'eda']),
+        'backend': any(k in jd_lower for k in ['fastapi', 'rest api', 'asyncio', 'docker', 'microservices', 'sql']),
+        'test_qa': any(k in jd_lower for k in ['qa', 'testing', 'automation testing', 'tosca', 'selenium', 'regression']),
+        'tech_list': tech_matches
     }
     return keywords
 
-def generate_pitch(company: str, title: str, keywords: dict) -> str:
-    if keywords['computer_vision']:
-        angle = "applied deep learning and computer vision (including Vision Transformers and OCR pipelines from my KFUPM master's research)"
+def generate_pitch(company: str, title: str, keywords: dict, desc: str = "") -> str:
+    paragraphs = []
+    
+    # 1. Technical Hook matching specific JD requirements
+    if keywords['computer_vision'] and keywords['nlp_llm']:
+        paragraphs.append(
+            f"My research at KFUPM (BRAIN Lab) focuses on multimodal architectures and computer vision—specifically Vision Transformers (ViT), Arabic Cheque OCR (CNN-BiLSTM with CTC loss), and ReSeeAI. I pair this with hands-on development in Python, PyTorch, and FastAPI."
+        )
+    elif keywords['computer_vision']:
+        paragraphs.append(
+            f"My master's research at KFUPM directly centers on applied computer vision and deep learning. I have built end-to-end vision pipelines including Vision Transformers (ViT) with eye tracking and high-accuracy Arabic Cheque OCR using CNN-BiLSTM architectures."
+        )
     elif keywords['nlp_llm']:
-        angle = "Generative AI, Agentic systems, and RAG pipelines using PyTorch, FastAPI, and vector databases"
+        paragraphs.append(
+            f"I have extensive research and project experience developing Generative AI, RAG, and agentic workflows using PyTorch, FastAPI, and vector retrieval, complemented by published multimodal assistant research at KFUPM."
+        )
     else:
-        angle = "applied machine learning, data engineering, and robust backend Python systems"
-        
-    return f"As an AI Engineer completing my Master's in AI at KFUPM with verified industry experience in Python automation, I bring direct hands-on expertise in {angle}. I am eager to contribute to {company}'s technical vision in the {title} role."
+        paragraphs.append(
+            f"With a strong foundation in deep learning, Python systems, and data pipelines from my Master's in AI at KFUPM, I focus on deploying production-grade machine learning models and robust backend services."
+        )
+
+    # 2. Industry Automation & Engineering rigor
+    if keywords['test_qa'] or 'testing' in (desc or '').lower():
+        paragraphs.append(
+            f"In addition to my AI research, I bring 22 months of commercial industry experience at Tata Consultancy Services (TCS) engineering enterprise test automation frameworks with Python, Selenium, and Vision AI, ensuring high reliability in production systems."
+        )
+    else:
+        paragraphs.append(
+            f"Beyond model development, I bring 22 months of commercial industry engineering experience at TCS, giving me a strong background in software quality, automated testing, and CI/CD best practices."
+        )
+
+    return " ".join(paragraphs)
 
 def tailor_job(job_row, profile_data, date_str=None):
     if not date_str:
@@ -69,17 +100,13 @@ def tailor_job(job_row, profile_data, date_str=None):
         src = os.path.join(RESUME_SOURCE_DIR, item)
         dst = os.path.join(target_dir, item)
         if os.path.isdir(src):
-            if os.path.exists(dst):
-                shutil.rmtree(dst)
-            shutil.copytree(src, dst)
+            shutil.copytree(src, dst, dirs_exist_ok=True)
         elif os.path.exists(src):
             shutil.copy2(src, dst)
 
     sections_src = os.path.join(RESUME_SOURCE_DIR, 'sections')
     sections_dst = os.path.join(target_dir, 'sections')
-    if os.path.exists(sections_dst):
-        shutil.rmtree(sections_dst)
-    shutil.copytree(sections_src, sections_dst)
+    shutil.copytree(sections_src, sections_dst, dirs_exist_ok=True)
 
     # 2. Extract JD keywords and generate tailored highlights
     keywords = extract_jd_keywords(desc)
@@ -129,7 +156,7 @@ def tailor_job(job_row, profile_data, date_str=None):
 
     # 7. Save application_package.json
     cand = profile_data.get('candidate', {})
-    pitch = generate_pitch(company, title, keywords)
+    pitch = generate_pitch(company, title, keywords, desc=desc)
 
     application_package = {
         'candidate': {

@@ -4,7 +4,7 @@ An autonomous, deterministic job application automation system designed for AI &
 
 ---
 
-## 🏛️ System Architecture
+### 🏛️ System Architecture
 
 ```
                                   [ data/jobs.db ] (SQLite State Store)
@@ -12,35 +12,34 @@ An autonomous, deterministic job application automation system designed for AI &
                                         ├── Status: shortlisted (Score >= 80)
                                         ▼
  ┌────────────────────────────────────────────────────────────────────────────────────────┐
- │ 1. ATS RESUME TAILORING ENGINE (scripts/fast_ats_tailor.py)                            │
+ │ 1. ATS RESUME & JD TAILORING ENGINE (scripts/fast_ats_tailor.py)                       │
  │    • Ingests job posting & canonical_profile.json                                      │
- │    • Extracts domain keywords (e.g. ViT, PyTorch, LangChain, RAG)                     │
+ │    • Deep technical taxonomy matching (ViT, PyTorch, LangChain, RAG, OCR, QA)          │
  │    • Dynamically tailors Awesome-CV LaTeX master source in my-resume/                 │
- │    • Compiles via Tectonic engine in ~3.5s                                             │
- │    • Hard assertion: Enforces STRICT 2-PAGE PDF (PyMuPDF fitz)                         │
- │    • Exports application bundle to applications/<date>_<company>_<job_id>/             │
+ │    • Compiles via Tectonic engine in ~3.5s (Strict 2-Page PDF assertion)               │
+ │    • Synthesizes human-styled, JD-tailored pitch in application_package.json          │
+ │    • Exports bundle to applications/<date>_<company>_<job_id>/                         │
  └──────────────────────────────────────┬─────────────────────────────────────────────────┘
                                         │
                                         ├── Status: tailored
                                         ▼
- ┌────────────────────────────────────────────────────────────────────────────────────────┐
- │ 2. BROWSER SUBMITTER & MEDIATOR (scripts/browser_apply_engine.py)                      │
- │    • Connects to persistent Chrome context (data/browser_profile)                      │
- │    • Navigates to job application portal (LinkedIn Easy Apply, Greenhouse, Lever, etc.)│
- │    • Autofills standard fields (Name, Email, Phone, Location, Work Rights)             │
- │    • Attaches verified 2-page resume.pdf in ~150ms                                     │
- │    • SUPERVISOR / MEDIATOR LOOP:                                                       │
- │       ├─ Standard flow: Form completes & submits in ~10 seconds                        │
- │       └─ Complex screener / CAPTCHA: Chime alert + 45s countdown timer                 │
- │            ├─ Human mediates & presses Enter -> Completes submission                   │
- │            └─ Human AFK (timer expires) -> Saves timeout_diagnostic.png, marks         │
- │               status='needs_manual_review', closes tab, smoothly advances             │
- └──────────────────────────────────────┬─────────────────────────────────────────────────┘
-                                        │
-                         ┌──────────────┴──────────────┐
-                         ▼                             ▼
-               Status: applied           Status: needs_manual_review
-           (receipt.png saved)           (diagnostic screenshot saved)
+             ┌──────────────────────────┴──────────────────────────┐
+             ▼                                                     ▼
+ ┌──────────────────────────────────────┐  ┌──────────────────────────────────────────────┐
+ │ 2. DIRECT RECRUITER OUTREACH         │  │ 3. BROWSER SUBMITTER & MEDIATOR              │
+ │    (scripts/send_resend_email.py)    │  │    (scripts/browser_apply_engine.py)          │
+ │    • Verified DKIM/SPF from          │  │    • Persistent Chrome profile context        │
+ │      shabaaz@infinitys.me            │  │    • Autofills ATS fields (Greenhouse, Lever) │
+ │    • Native human layout (no AI tags)│  │    • Attaches verified 2-page resume.pdf      │
+ │    • Auto-attaches resume.pdf        │  │    • 45s Mediator Supervisor Loop             │
+ │    • Reply-To: theshabaaz@outlook.com│  │    • Diagnostic screenshots on timeout        │
+ │    • Anti-duplicate safety guard     │  │    • Saves full-page submission receipt.png   │
+ └──────────────────┬───────────────────┘  └──────────────────────┬───────────────────────┘
+                    │                                             │
+                    └─────────────────────┬───────────────────────┘
+                                          ▼
+                                Status: applied / outreach_sent
+                               (cryptographic receipts saved)
 ```
 
 ---

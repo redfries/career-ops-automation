@@ -95,10 +95,14 @@ All listings in [`data/jobs.db`](data/jobs.db) exist in one of these authoritati
 4. **Firecrawl Contact Intelligence**:
    - Identify active hiring managers, Engineering Directors, Practice Leads, and Talent Acquisition Recruiters.
    - Resolve verified corporate email patterns and LinkedIn profile URLs.
-5. **Personalized Cold Outreach Pack**:
-   - Provide copy-paste cold email draft and LinkedIn connection request note (<300 characters) referencing candidate's specific KFUPM research and automation background.
+5. **Automated JD-Tailored Recruiter Outreach (Resend Engine)**:
+   - Ingest the synthesized JD pitch from `application_package.json`.
+   - Dispatch clean, human-styled email with compiled 2-page `resume.pdf` attached:
+     `python scripts/run_batch.py --email <JOB_ID> --to <RECRUITER_EMAIL>`
+   - Verified cryptographic DKIM/SPF from `shabaaz@infinitys.me` with replies routing directly to `theshabaaz@outlook.com`.
+   - Anti-duplicate safety guard enforces strictly 1 send per bundle.
 6. **Candidate Apply Gate & Interactive Feedback**:
-   - Candidate opens link, submits tailored resume, sends cold email, and provides remarks / notes (e.g. screening questionnaire answers).
+   - Candidate opens link, submits portal application (or runs browser submitter), verifies outreach dispatch, and notes screening answers.
 7. **Stateful Database Update & Follow-Up**:
    - Update SQLite database (`data/jobs.db`) with `status = 'applied'`, timestamp `applied_at`, and contact notes before queueing the next listing.
 
@@ -115,8 +119,12 @@ python scripts/run_batch.py --status
 # 2. Tailor resume for a specific job by ID (generates application folder & 2-page PDF)
 python scripts/fast_ats_tailor.py --job-id <JOB_ID>
 
-# 3. Update job status to applied with outreach notes in SQLite DB
+# 3. Automatically dispatch tailored outreach email with 2-page PDF resume attached
+python scripts/send_resend_email.py --app-dir applications/<BUNDLE_DIR> --to <RECRUITER_EMAIL>
+
+# 4. Update job status to applied with outreach notes in SQLite DB
 python -c "import sqlite3, datetime; conn=sqlite3.connect('data/jobs.db'); cur=conn.cursor(); cur.execute('UPDATE jobs SET status=\'applied\', applied_at=?, notes=? WHERE id=?', (datetime.datetime.now().isoformat(), 'Applied via portal and sent cold email', '<JOB_ID>')); conn.commit()"
+
 ```
 
 ---

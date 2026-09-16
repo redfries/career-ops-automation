@@ -34,11 +34,14 @@ def create_batch_wrapper(cmd_args: list[str]) -> str:
     
     bat_content = f"""@echo off
 cd /d "{REPO_DIR}"
-echo [CareerOps] Launching browser engine at %TIME%...
-{quoted_python} {quoted_args}
+echo ============================================================
+echo [CareerOps] Launching browser engine on visible desktop...
+echo ============================================================
+{quoted_python} {quoted_args} 2>&1 | powershell -Command "$input | Tee-Object -FilePath 'data\\browser_engine.log'"
+echo ============================================================
 echo [CareerOps] Engine finished with exit code %ERRORLEVEL% at %TIME%
-echo. 
-pause
+echo ============================================================
+timeout /t 10 /nobreak >nul
 """
     with open(bat_path, 'w', encoding='utf-8') as f:
         f.write(bat_content)
@@ -47,52 +50,44 @@ pause
 
 
 def launch_interactive(bat_path: str) -> bool:
-    """Register and immediately run a Windows Scheduled Task in the interactive session."""
-    username = os.environ.get('USERNAME', os.environ.get('USER', ''))
+    """Register and run a Windows Scheduled Task with /IT flag.
+    This bridges from the agent sandbox into the USER'S active interactive
+    desktop (WinSta0\\Default), forcing the console and Brave to appear visibly on screen.
+    """
+    # Delete old task if exists
+    subprocess.run(['schtasks', '/delete', '/tn', TASK_NAME, '/f'], capture_output=True)
     
-    # Delete old task if exists (ignore errors)
-    subprocess.run(
-        ['schtasks', '/delete', '/tn', TASK_NAME, '/f'],
-        capture_output=True, text=True
-    )
-    
-    # Create task: /IT = interactive (user's desktop), /RL HIGHEST = elevated if needed
-    # /RU with current username ensures it runs in the logged-on user's session
+    # Create task with /IT (Interactive token on user's desktop)
     create_cmd = [
         'schtasks', '/create',
         '/tn', TASK_NAME,
-        '/tr', f'"{bat_path}"',
+        '/tr', f'cmd.exe /c "{bat_path}"',
         '/sc', 'once',
-        '/st', '00:00',        # Dummy time (we trigger manually)
-        '/sd', '01/01/2000',   # Dummy date (we trigger manually)  
-        '/IT',                  # Interactive — runs on user's desktop!
-        '/F',                   # Force overwrite
+        '/st', '00:00',
+        '/sd', '01/01/2000',
+        '/IT',
+        '/F'
     ]
-    
     result = subprocess.run(create_cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print(f"[ERROR] Failed to create scheduled task: {result.stderr}")
         return False
     
-    print(f"[OK] Scheduled task '{TASK_NAME}' created.")
+    print(f"[OK] Scheduled task '{TASK_NAME}' registered for interactive desktop.")
     
-    # Run it immediately
-    run_result = subprocess.run(
-        ['schtasks', '/run', '/tn', TASK_NAME],
-        capture_output=True, text=True
-    )
-    
+    # Run task
+    run_result = subprocess.run(['schtasks', '/run', '/tn', TASK_NAME], capture_output=True, text=True)
     if run_result.returncode != 0:
         print(f"[ERROR] Failed to run task: {run_result.stderr}")
         return False
+        
+    print("[OK] Task launched on your interactive desktop (WinSta0\\Default)!")
+    print("     The Command Prompt and Brave browser are VISIBLE on your screen now.")
     
-    print(f"[OK] Task launched in your interactive desktop session!")
-    print(f"     Brave should be VISIBLE on your screen now.")
-    
-    # Poll task status until it completes
-    print(f"\n[Monitoring] Waiting for browser engine to finish...")
-    while True:
-        time.sleep(3)
+    # Poll task until complete (timeout max 180s)
+    start_time = time.time()
+    while time.time() - start_time < 180:
+        time.sleep(2)
         status = subprocess.run(
             ['schtasks', '/query', '/tn', TASK_NAME, '/fo', 'CSV', '/nh'],
             capture_output=True, text=True
@@ -104,10 +99,8 @@ def launch_interactive(bat_path: str) -> bool:
         else:
             print(f"\n[DONE] Browser engine task completed.")
             break
-    
-    # Cleanup: delete the task
+            
     subprocess.run(['schtasks', '/delete', '/tn', TASK_NAME, '/f'], capture_output=True)
-    
     return True
 
 
@@ -136,7 +129,7 @@ def main():
     print("=" * 60)
     print(f"Command: python {' '.join(cmd_args)}")
     print(f"Mode:    {args.mode}")
-    print(f"Method:  Windows Scheduled Task (/IT interactive)")
+    print(f"Method:  Windows Task Scheduler (/IT Interactive Desktop Bridge)")
     print("=" * 60)
     
     bat_path = create_batch_wrapper(cmd_args)

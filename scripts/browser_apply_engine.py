@@ -10,15 +10,19 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 if sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-DB_PATH = 'data/jobs.db'
+REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+DB_PATH = os.path.join(REPO_DIR, 'data', 'jobs.db')
 BRAVE_EXE = os.environ.get(
     'BRAVE_PATH',
     r'C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe'
 )
-# Use Brave's own User Data so existing login cookies (LinkedIn, etc.) persist
+# Dedicated persistent automation profile:
+# 1. Avoids profile lock collisions with personal Brave
+# 2. Bypasses Chrome 136+ security block on remote debugging on default User Data
+# 3. Saves session cookies (LinkedIn, etc.) permanently across runs
 PROFILE_DIR = os.environ.get(
     'BROWSER_PROFILE_DIR',
-    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'BraveSoftware', 'Brave-Browser', 'User Data')
+    os.path.join(REPO_DIR, 'data', 'browser_profile')
 )
 os.makedirs(PROFILE_DIR, exist_ok=True)
 
@@ -27,9 +31,8 @@ def get_db_connection():
 
 def prompt_mediator(company: str, title: str, timeout_sec: int = 45, auto_confirm: bool = False) -> bool:
     """Alerts user with an audible chime and gives a countdown to mediate in the visible browser.
-    
-    When auto_confirm=True (agent mode), skips the countdown and proceeds immediately.
-    Otherwise checks both msvcrt (console) and stdin (pipe) for ENTER input.
+    Proceeds immediately when auto_confirm=True or when user presses ENTER,
+    or proceeds when timeout completes.
     """
     if auto_confirm:
         print("\n[Mediator] Auto-confirm enabled (agent mode). Proceeding immediately...")
@@ -44,68 +47,27 @@ def prompt_mediator(company: str, title: str, timeout_sec: int = 45, auto_confir
     print("\n" + "=" * 65)
     print(f"[MEDIATOR ACTION REQUIRED] - {company} | {title}")
     print("Please review the open Brave window: fill missing fields, sign in, or solve CAPTCHA.")
-    print(f"Supervisor countdown: {timeout_sec}s to mediate before skipping cleanly.")
-    print("Press [ENTER] in this terminal once ready to proceed (or wait to skip)...")
+    print(f"Countdown: {timeout_sec}s to review before proceeding with submission.")
+    print("Press [ENTER] in this terminal once ready to proceed immediately...")
     print("=" * 65)
 
     start_time = time.time()
+    import msvcrt
     
-    # Check if stdin is a pipe/redirected (agent mode) vs interactive console
-    import select
-    stdin_is_pipe = not sys.stdin.isatty()
-    
-    if stdin_is_pipe:
-        # Agent mode: read from stdin pipe
-        while time.time() - start_time < timeout_sec:
-            remaining = int(timeout_sec - (time.time() - start_time))
-            sys.stdout.write(f"\r[Mediator Timer] {remaining}s remaining... (waiting for stdin) ")
-            sys.stdout.flush()
-            
-            # Non-blocking stdin check on Windows
-            import msvcrt
-            if msvcrt.kbhit():
-                key = msvcrt.getch()
-                if key in [b'\r', b'\n', b' ']:
-                    print("\n[Mediator] Input received! Resuming submission...")
-                    return True
-            
-            # Also try reading stdin directly
-            try:
-                if sys.stdin.readable():
-                    import threading
-                    result = [None]
-                    def read_stdin():
-                        try:
-                            result[0] = sys.stdin.readline()
-                        except Exception:
-                            pass
-                    t = threading.Thread(target=read_stdin, daemon=True)
-                    t.start()
-                    t.join(timeout=0.5)
-                    if result[0] is not None and len(result[0].strip()) >= 0 and result[0] != '':
-                        print("\n[Mediator] Stdin input received! Resuming submission...")
-                        return True
-            except Exception:
-                pass
-            
-            time.sleep(1.0)
-    else:
-        # Interactive console mode: use msvcrt
-        import msvcrt
-        while time.time() - start_time < timeout_sec:
-            remaining = int(timeout_sec - (time.time() - start_time))
-            sys.stdout.write(f"\r[Mediator Timer] {remaining}s remaining... (Press ENTER when done) ")
-            sys.stdout.flush()
-            
-            if msvcrt.kbhit():
-                key = msvcrt.getch()
-                if key in [b'\r', b'\n', b' ']:
-                    print("\n[Mediator] User intervention confirmed! Resuming submission...")
-                    return True
-            time.sleep(1.0)
+    while time.time() - start_time < timeout_sec:
+        remaining = int(timeout_sec - (time.time() - start_time))
+        sys.stdout.write(f"\r[Mediator Timer] {remaining:>2}s remaining... (Press ENTER to submit immediately) ")
+        sys.stdout.flush()
 
-    print("\n[Mediator] Timer expired (AFK). Gracefully saving state & skipping to next job.")
-    return False
+        if msvcrt.kbhit():
+            key = msvcrt.getch()
+            if key in [b'\r', b'\n', b' ']:
+                print("\n[Mediator] User intervention confirmed! Resuming submission...")
+                return True
+        time.sleep(1.0)
+
+    print("\n[Mediator] Timer elapsed. Resuming submission...")
+    return True
 
 def dismiss_overlays(page):
     """Dismisses guest sign-in modals, cookie consent banners, or backdrop popups."""
@@ -134,18 +96,74 @@ def dismiss_overlays(page):
     except Exception:
         pass
 
-def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: float = 90.0, mediator_timeout_sec: int = 45):
-    # Guard: Brave must be closed so Playwright can use the Default profile
-    import subprocess
-    result = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq brave.exe'], capture_output=True, text=True)
-    if 'brave.exe' in result.stdout.lower():
-        print("\n" + "=" * 65)
-        print("!! BRAVE IS CURRENTLY RUNNING !!")
-        print("Please close ALL Brave windows first, then re-run this command.")
-        print("(Playwright needs exclusive access to your Default Brave profile.)")
-        print("=" * 65)
-        sys.exit(1)
+def bring_brave_to_foreground():
+    """Finds the active Brave/Chromium window and forces it to OS foreground on Windows."""
+    import ctypes
+    from ctypes import wintypes
 
+    user32 = ctypes.windll.user32
+    kernel32 = ctypes.windll.kernel32
+
+    SW_RESTORE = 9
+    HWND_TOPMOST = -1
+    HWND_NOTOPMOST = -2
+    SWP_SHOWWINDOW = 0x0040
+
+    found_hwnds = []
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def enum_cb(hwnd, lparam):
+        if not user32.IsWindow(hwnd):
+            return True
+        class_buf = ctypes.create_unicode_buffer(256)
+        user32.GetClassNameW(hwnd, class_buf, 256)
+        if class_buf.value == "Chrome_WidgetWin_1":
+            title_len = user32.GetWindowTextLengthW(hwnd)
+            title_buf = ctypes.create_unicode_buffer(title_len + 1)
+            user32.GetWindowTextW(hwnd, title_buf, title_len + 1)
+            # Filter strictly for Brave windows, avoiding IDE / Electron windows
+            if title_len > 0 and ("brave" in title_buf.value.lower() or "- brave" in title_buf.value.lower()):
+                found_hwnds.append((hwnd, title_buf.value))
+        return True
+
+    user32.EnumWindows(WNDENUMPROC(enum_cb), 0)
+    if not found_hwnds:
+        print("      ⚠️ [Win32] No Brave window found to bring to foreground.")
+        return False
+
+    target_hwnd = found_hwnds[0][0]
+    print(f"      🪟 [Win32] Found Brave window: '{found_hwnds[0][1][:60]}...'")
+
+    # 1. Restore from minimized state
+    user32.ShowWindow(target_hwnd, SW_RESTORE)
+
+    # 2. Reset position to primary display (0,0)
+    user32.SetWindowPos(target_hwnd, HWND_TOPMOST, 0, 0, 1300, 960, SWP_SHOWWINDOW)
+    user32.SetWindowPos(target_hwnd, HWND_NOTOPMOST, 0, 0, 1300, 960, SWP_SHOWWINDOW)
+
+    # 3. Bypass Windows foreground lock using ALT key tap + AttachThreadInput
+    fg_hwnd = user32.GetForegroundWindow()
+    fg_thread_id = user32.GetWindowThreadProcessId(fg_hwnd, None)
+    cur_thread_id = kernel32.GetCurrentThreadId()
+
+    # Simulate ALT key tap to grant focus permission
+    user32.keybd_event(0x12, 0, 0, 0)       # VK_MENU (Alt) down
+    user32.keybd_event(0x12, 0, 0x0002, 0)  # VK_MENU (Alt) up
+
+    if fg_thread_id != cur_thread_id:
+        user32.AttachThreadInput(cur_thread_id, fg_thread_id, True)
+        user32.BringWindowToTop(target_hwnd)
+        user32.SetForegroundWindow(target_hwnd)
+        user32.AttachThreadInput(cur_thread_id, fg_thread_id, False)
+    else:
+        user32.BringWindowToTop(target_hwnd)
+        user32.SetForegroundWindow(target_hwnd)
+
+    print("      ✅ [Win32] Brave window brought to foreground successfully.")
+    return True
+
+def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: float = 90.0, mediator_timeout_sec: int = 45):
     package_file = os.path.join(folder_path, "application_package.json")
     job_file = os.path.join(folder_path, "job_details.json")
 
@@ -172,20 +190,61 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
 
     overall_start = time.time()
 
+    # --- Launch Brave with Remote Debugging ---
+    import urllib.request
+    import subprocess
+    CDP_PORT = 9222
+
+    def is_cdp_listening(port):
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/json/version", timeout=1.5) as resp:
+                return resp.status == 200
+        except Exception:
+            return False
+
+    if not is_cdp_listening(CDP_PORT):
+        print(f"[0/5] Launching Brave on visible desktop...")
+        brave_cmd = [
+            BRAVE_EXE,
+            f"--remote-debugging-port={CDP_PORT}",
+            f"--user-data-dir={PROFILE_DIR}",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--start-maximized",
+            "--test-type",
+            "about:blank"
+        ]
+        subprocess.Popen(brave_cmd)
+
+        for _ in range(12):
+            time.sleep(0.5)
+            if is_cdp_listening(CDP_PORT):
+                break
+    else:
+        print(f"[0/5] Connected to active Brave automation instance on port {CDP_PORT}.")
+
+    # Force to foreground via Win32 API
+    try:
+        bring_brave_to_foreground()
+    except Exception as e:
+        print(f"      ⚠️ Win32 foreground helper note: {e}")
+
     with sync_playwright() as p:
-        # Launch Brave using the user's Default profile (already logged into LinkedIn)
-        context = p.chromium.launch_persistent_context(
-            user_data_dir=PROFILE_DIR,
-            executable_path=BRAVE_EXE,
-            headless=False,
-            viewport={"width": 1280, "height": 950},
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--profile-directory=Default"
-            ]
-        )
-        page = context.new_page()
+        # Connect to Brave over CDP instead of launching it
+        print(f"      🔌 Connecting Playwright to Brave via CDP (port {CDP_PORT})...")
+        try:
+            browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{CDP_PORT}")
+        except Exception as e:
+            print(f"      ❌ CDP connection failed: {e}")
+            print("      Retrying in 3 seconds...")
+            time.sleep(3.0)
+            browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{CDP_PORT}")
+
+        context = browser.contexts[0]
+        # Stealthily hide webdriver flag without triggering Chromium warning banner
+        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        page = context.pages[0] if context.pages else context.new_page()
+        print("      ✅ Connected to Brave successfully.")
 
         try:
             # 1. Navigate to Job URL
@@ -198,6 +257,12 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
 
             # Dismiss annoying popups/guest modals
             dismiss_overlays(page)
+
+            # Re-force Brave to foreground after navigation
+            try:
+                bring_brave_to_foreground()
+            except Exception:
+                pass
 
             # 2. Upload Resume PDF (Sub-second file handler)
             print("[2/5] Locating and attaching 2-page resume PDF...")
@@ -272,7 +337,7 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
                 page.screenshot(path=preview_shot, full_page=True)
                 print(f"      📸 Dry-run complete. Screenshot saved: {preview_shot}")
                 print("      🛑 [DRY-RUN] Skipping final submit click.")
-                context.close()
+                browser.close()
                 return "dry-run-success"
 
             submit_btn = page.locator('button[type="submit"], button:has-text("Submit application"), button:has-text("Submit"), button:has-text("Review"), button:has-text("إرسال")')
@@ -293,7 +358,7 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
                     conn.close()
                     
                     print(f"      💾 State saved as 'needs_manual_review'. Screenshot: {diag_shot}")
-                    context.close()
+                    browser.close()
                     return "skipped-afk"
 
             # 6. Execute Final Submission & Capture Receipt
@@ -302,7 +367,7 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
             
             submit_btn = page.locator('button[type="submit"], button:has-text("Submit application"), button:has-text("Submit"), button:has-text("إرسال")')
             if submit_btn.count() > 0 and submit_btn.first.is_visible():
-                submit_btn.first.click()
+                submit_btn.click()
                 time.sleep(3.5)
 
             # Capture full-page proof
@@ -324,7 +389,7 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
             conn.close()
 
             print(f"🎉 [SUCCESS] Applied to {company} ({title})! Status updated to 'applied'.")
-            context.close()
+            browser.close()
             return "applied"
 
         except Exception as e:
@@ -340,7 +405,10 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
             conn.commit()
             conn.close()
             
-            context.close()
+            try:
+                browser.close()
+            except Exception:
+                pass
             return "error"
 
 def main():
