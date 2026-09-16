@@ -76,12 +76,12 @@ All listings in [`data/jobs.db`](data/jobs.db) exist in one of these authoritati
 ## 4. The "Mediator Mode" Human-in-the-Loop Protocol
 
 When running `browser_apply_engine.py`:
-1. **Persistent Browser Session**: Attaches to `data/browser_profile` (or user's Chrome data dir) where login cookies for LinkedIn and boards persist.
+1. **Persistent Browser Session**: Launches Brave (`executable_path` pointing to system Brave) with a dedicated `Career-Ops` profile under Brave's User Data directory, where login cookies for LinkedIn and boards persist.
 2. **Fast Autofill**: Fills Name, Email, Phone, Location, Work Rights, and attaches `resume.pdf` in under 2 seconds.
 3. **Mediator Alert**: If an unexpected screener question, dynamic dropdown, or CAPTCHA appears:
    * Plays an audible chime (`\a`).
    * Starts a **45-second countdown timer** in the terminal.
-   * If the user mediates in the open Chrome window and presses `[ENTER]`: Resumes and completes the application.
+   * If the user mediates in the open Brave window and presses `[ENTER]`: Resumes and completes the application.
    * If the user is away (timer expires):
      * Captures `applications/<folder>/timeout_diagnostic.png`.
      * Updates database: `status = 'needs_manual_review'`.

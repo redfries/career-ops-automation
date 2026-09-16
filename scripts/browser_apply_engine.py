@@ -11,14 +11,30 @@ if sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 DB_PATH = 'data/jobs.db'
-PROFILE_DIR = os.path.abspath('data/browser_profile')
+BRAVE_EXE = os.environ.get(
+    'BRAVE_PATH',
+    r'C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe'
+)
+# Use Brave's own User Data so existing login cookies (LinkedIn, etc.) persist
+PROFILE_DIR = os.environ.get(
+    'BROWSER_PROFILE_DIR',
+    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'BraveSoftware', 'Brave-Browser', 'User Data')
+)
 os.makedirs(PROFILE_DIR, exist_ok=True)
 
 def get_db_connection():
     return sqlite3.connect(DB_PATH)
 
-def prompt_mediator(company: str, title: str, timeout_sec: int = 45) -> bool:
-    """Alerts user with an audible chime and gives a countdown to mediate in the visible browser."""
+def prompt_mediator(company: str, title: str, timeout_sec: int = 45, auto_confirm: bool = False) -> bool:
+    """Alerts user with an audible chime and gives a countdown to mediate in the visible browser.
+    
+    When auto_confirm=True (agent mode), skips the countdown and proceeds immediately.
+    Otherwise checks both msvcrt (console) and stdin (pipe) for ENTER input.
+    """
+    if auto_confirm:
+        print("\n[Mediator] Auto-confirm enabled (agent mode). Proceeding immediately...")
+        return True
+
     try:
         sys.stdout.write('\a')
         sys.stdout.flush()
@@ -26,27 +42,69 @@ def prompt_mediator(company: str, title: str, timeout_sec: int = 45) -> bool:
         pass
 
     print("\n" + "=" * 65)
-    print(f"⚠️  [MEDIATOR ACTION REQUIRED] - {company} | {title}")
-    print("👉 Please review the open Chrome window: fill missing fields, sign in, or solve CAPTCHA.")
-    print(f"⏳ Supervisor countdown: {timeout_sec}s to mediate before skipping cleanly.")
-    print("⌨️  Press [ENTER] in this terminal once ready to proceed (or wait to skip)...")
+    print(f"[MEDIATOR ACTION REQUIRED] - {company} | {title}")
+    print("Please review the open Brave window: fill missing fields, sign in, or solve CAPTCHA.")
+    print(f"Supervisor countdown: {timeout_sec}s to mediate before skipping cleanly.")
+    print("Press [ENTER] in this terminal once ready to proceed (or wait to skip)...")
     print("=" * 65)
 
     start_time = time.time()
-    import msvcrt
-    while time.time() - start_time < timeout_sec:
-        remaining = int(timeout_sec - (time.time() - start_time))
-        sys.stdout.write(f"\r[Mediator Timer] {remaining}s remaining... (Press ENTER when done) ")
-        sys.stdout.flush()
-        
-        if msvcrt.kbhit():
-            key = msvcrt.getch()
-            if key in [b'\r', b'\n', b' ']:
-                print("\n[Mediator] User intervention confirmed! Resuming submission...")
-                return True
-        time.sleep(1.0)
+    
+    # Check if stdin is a pipe/redirected (agent mode) vs interactive console
+    import select
+    stdin_is_pipe = not sys.stdin.isatty()
+    
+    if stdin_is_pipe:
+        # Agent mode: read from stdin pipe
+        while time.time() - start_time < timeout_sec:
+            remaining = int(timeout_sec - (time.time() - start_time))
+            sys.stdout.write(f"\r[Mediator Timer] {remaining}s remaining... (waiting for stdin) ")
+            sys.stdout.flush()
+            
+            # Non-blocking stdin check on Windows
+            import msvcrt
+            if msvcrt.kbhit():
+                key = msvcrt.getch()
+                if key in [b'\r', b'\n', b' ']:
+                    print("\n[Mediator] Input received! Resuming submission...")
+                    return True
+            
+            # Also try reading stdin directly
+            try:
+                if sys.stdin.readable():
+                    import threading
+                    result = [None]
+                    def read_stdin():
+                        try:
+                            result[0] = sys.stdin.readline()
+                        except Exception:
+                            pass
+                    t = threading.Thread(target=read_stdin, daemon=True)
+                    t.start()
+                    t.join(timeout=0.5)
+                    if result[0] is not None and len(result[0].strip()) >= 0 and result[0] != '':
+                        print("\n[Mediator] Stdin input received! Resuming submission...")
+                        return True
+            except Exception:
+                pass
+            
+            time.sleep(1.0)
+    else:
+        # Interactive console mode: use msvcrt
+        import msvcrt
+        while time.time() - start_time < timeout_sec:
+            remaining = int(timeout_sec - (time.time() - start_time))
+            sys.stdout.write(f"\r[Mediator Timer] {remaining}s remaining... (Press ENTER when done) ")
+            sys.stdout.flush()
+            
+            if msvcrt.kbhit():
+                key = msvcrt.getch()
+                if key in [b'\r', b'\n', b' ']:
+                    print("\n[Mediator] User intervention confirmed! Resuming submission...")
+                    return True
+            time.sleep(1.0)
 
-    print("\n[Mediator] Timer expired (User AFK). Gracefully saving state & skipping to next job.")
+    print("\n[Mediator] Timer expired (AFK). Gracefully saving state & skipping to next job.")
     return False
 
 def dismiss_overlays(page):
@@ -77,6 +135,17 @@ def dismiss_overlays(page):
         pass
 
 def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: float = 90.0, mediator_timeout_sec: int = 45):
+    # Guard: Brave must be closed so Playwright can use the Default profile
+    import subprocess
+    result = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq brave.exe'], capture_output=True, text=True)
+    if 'brave.exe' in result.stdout.lower():
+        print("\n" + "=" * 65)
+        print("!! BRAVE IS CURRENTLY RUNNING !!")
+        print("Please close ALL Brave windows first, then re-run this command.")
+        print("(Playwright needs exclusive access to your Default Brave profile.)")
+        print("=" * 65)
+        sys.exit(1)
+
     package_file = os.path.join(folder_path, "application_package.json")
     job_file = os.path.join(folder_path, "job_details.json")
 
@@ -104,14 +173,16 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
     overall_start = time.time()
 
     with sync_playwright() as p:
-        # Launch persistent context to keep login cookies active across runs
+        # Launch Brave using the user's Default profile (already logged into LinkedIn)
         context = p.chromium.launch_persistent_context(
             user_data_dir=PROFILE_DIR,
+            executable_path=BRAVE_EXE,
             headless=False,
             viewport={"width": 1280, "height": 950},
             args=[
                 "--disable-blink-features=AutomationControlled",
-                "--no-sandbox"
+                "--no-sandbox",
+                "--profile-directory=Default"
             ]
         )
         page = context.new_page()
