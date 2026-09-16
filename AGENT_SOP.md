@@ -73,24 +73,38 @@ All listings in [`data/jobs.db`](data/jobs.db) exist in one of these authoritati
 
 ---
 
-## 4. The "Mediator Mode" Human-in-the-Loop Protocol
+## 4. The 1-by-1 Direct Apply & Firecrawl Cold Outreach Protocol
 
-When running `browser_apply_engine.py`:
-1. **Persistent Browser Session**: Launches Brave (`executable_path` pointing to system Brave) with a dedicated `Career-Ops` profile under Brave's User Data directory, where login cookies for LinkedIn and boards persist.
-2. **Fast Autofill**: Fills Name, Email, Phone, Location, Work Rights, and attaches `resume.pdf` in under 2 seconds.
-3. **Mediator Alert**: If an unexpected screener question, dynamic dropdown, or CAPTCHA appears:
-   * Plays an audible chime (`\a`).
-   * Starts a **45-second countdown timer** in the terminal.
-   * If the user mediates in the open Brave window and presses `[ENTER]`: Resumes and completes the application.
-   * If the user is away (timer expires):
-     * Captures `applications/<folder>/timeout_diagnostic.png`.
-     * Updates database: `status = 'needs_manual_review'`.
-     * Closes the tab cleanly.
-     * **Smoothly advances to the next job without crashing or stopping the batch loop.**
+> **Approved Operational Directive**:
+> Rather than relying on fragile end-to-end browser automation that can hit bot walls or timeouts, execution proceeds in an agile, high-leverage **1-by-1 human-in-the-loop cadence**.
+
+### Target Scope & Seniority Filter
+* **Target Audience**: **0–1 Year Experience / Junior / Entry-Level / Master's Graduate** AI, ML, Computer Vision, and Generative AI roles.
+* **Skip Rule**: Automatically skip mid/senior roles requiring 3–5+ years of commercial AI experience unless explicitly instructed.
+
+### The 7-Step Cadence for Each Job:
+1. **Direct Application Link Resolution**:
+   - Extract clean direct ATS portal links (Workable, Greenhouse, Lever, or official corporate careers portals) via Firecrawl alongside the original scraped LinkedIn URL to bypass bot walls.
+2. **Sub-Second Tailored Resume Compilation**:
+   - Compile 2-page LaTeX resume with Tectonic (`fast_ats_tailor.py`).
+   - Strict 2-page invariant check via PyMuPDF.
+3. **Resume vs. JD Alignment & Impact Audit**:
+   - Cross-examine the compiled resume against the JD requirements.
+   - Verify keyword coverage, project highlight positioning (e.g. KFUPM thesis, OCR, ViT, RAG), and strict adherence to `data/canonical_profile.json`.
+   - Present transparent Alignment Audit Scorecard to candidate.
+4. **Firecrawl Contact Intelligence**:
+   - Identify active hiring managers, Engineering Directors, Practice Leads, and Talent Acquisition Recruiters.
+   - Resolve verified corporate email patterns and LinkedIn profile URLs.
+5. **Personalized Cold Outreach Pack**:
+   - Provide copy-paste cold email draft and LinkedIn connection request note (<300 characters) referencing candidate's specific KFUPM research and automation background.
+6. **Candidate Apply Gate & Interactive Feedback**:
+   - Candidate opens link, submits tailored resume, sends cold email, and provides remarks / notes (e.g. screening questionnaire answers).
+7. **Stateful Database Update & Follow-Up**:
+   - Update SQLite database (`data/jobs.db`) with `status = 'applied'`, timestamp `applied_at`, and contact notes before queueing the next listing.
 
 ---
 
-## 5. Master CLI Cockpit Reference
+## 5. Master CLI Cockpit & Script Reference
 
 AI Agents should invoke these scripts via shell commands:
 
@@ -98,17 +112,11 @@ AI Agents should invoke these scripts via shell commands:
 # 1. View overall pipeline metrics and queue health
 python scripts/run_batch.py --status
 
-# 2. Tailor resumes for top N shortlisted jobs (generates folders & 2-page PDFs)
-python scripts/run_batch.py --tailor 5
+# 2. Tailor resume for a specific job by ID (generates application folder & 2-page PDF)
+python scripts/fast_ats_tailor.py --job-id <JOB_ID>
 
-# 3. Tailor a specific job by ID
-python scripts/fast_ats_tailor.py --job-id 4460970498
-
-# 4. Run browser application loop in Assisted Mode (with Mediator supervisor)
-python scripts/run_batch.py --apply 3 --mode assisted
-
-# 5. Run a safe dry-run (fills form, attaches resume, captures preview screenshot, skips submit)
-python scripts/browser_apply_engine.py --job-id 4460970498 --mode dry-run
+# 3. Update job status to applied with outreach notes in SQLite DB
+python -c "import sqlite3, datetime; conn=sqlite3.connect('data/jobs.db'); cur=conn.cursor(); cur.execute('UPDATE jobs SET status=\'applied\', applied_at=?, notes=? WHERE id=?', (datetime.datetime.now().isoformat(), 'Applied via portal and sent cold email', '<JOB_ID>')); conn.commit()"
 ```
 
 ---
@@ -116,4 +124,5 @@ python scripts/browser_apply_engine.py --job-id 4460970498 --mode dry-run
 ## 6. Official Skill Integrations
 
 * **`career-ops`**: [`.agents/skills/career-ops/SKILL.md`](.agents/skills/career-ops/SKILL.md) — Reference implementation from [`career-ops-hq/career-ops`](https://github.com/career-ops-hq/career-ops). Provides Career-Ops Blocks A–H evaluation, LaTeX generation, and tracker management.
-* **`job-hunter-firecrawl`**: [`.agents/skills/job-hunter-firecrawl/SKILL.md`](.agents/skills/job-hunter-firecrawl/SKILL.md) — Firecrawl search, scraping, and multi-portal ingestion.
+* **`job-hunter-firecrawl`**: [`.agents/skills/job-hunter-firecrawl/SKILL.md`](.agents/skills/job-hunter-firecrawl/SKILL.md) — Firecrawl search, scraping, and multi-portal decision-maker contact discovery.
+
