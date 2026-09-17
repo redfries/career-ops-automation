@@ -183,7 +183,7 @@ def stage_4_alignment_audit(job: dict, target_dir: Path, keywords: dict, ats_met
         "candidate_identity": "Shabaaz Hussain Shaik (Verified Canonical)",
         "academic_affiliation": "KFUPM MS in AI (BRAIN Lab) - Zero Fabrication",
         "commercial_experience": "TCS QA Automation Engineer (Zero AI Role Inflation)",
-        "work_authorization": "Saudi Arabia Resident on Transferable Iqama",
+        "work_authorization": "Saudi Arabia Resident (Dhahran)",
         "layout_integrity": "Strict 2-Page Awesome-CV (Verified)"
     }
 
@@ -212,7 +212,7 @@ def stage_4_alignment_audit(job: dict, target_dir: Path, keywords: dict, ats_met
 - ✅ **Candidate**: Shabaaz Hussain Shaik (Canonical truth preserved)
 - ✅ **Academic Background**: KFUPM MS in AI, BRAIN Lab (ViT, Arabic OCR, ReSeeAI)
 - ✅ **Industry Experience**: TCS QA Automation Engineer (No fabricated AI claims)
-- ✅ **Work Authorization**: Saudi Arabia Transferable Iqama (Immediate availability)
+- ✅ **Work Authorization**: Saudi Arabia Resident in Dhahran (Immediate availability)
 - ✅ **Layout Assertion**: Strictly 2 pages verified via PyMuPDF
 
 ### 2. Matched Technology Vector
@@ -534,7 +534,7 @@ def stage_8_candidate_cockpit(job: dict, target_dir: Path, direct_link: str, con
 # =====================================================================
 # MASTER ORCHESTRATION PIPELINE (FAIL-FAST)
 # =====================================================================
-def run_pipeline(job_id: str, to_email: str = None, force_email: bool = False, skip_email: bool = False, mode: str = "honest", show_diff: bool = True):
+def run_pipeline(job_id: str, to_email: str = None, force_email: bool = False, skip_email: bool = False, mode: str = "balanced", show_diff: bool = True):
     target_dir = None
     try:
         profile = load_canonical_profile()
@@ -628,7 +628,7 @@ def main():
     parser = argparse.ArgumentParser(description="Deterministic Career-Ops Pipeline Orchestrator (Tsenta ATS Engine)")
     parser.add_argument("--job-id", type=str, help="Process a specific job ID through all 8 stages")
     parser.add_argument("--next-shortlisted", action="store_true", help="Process next highest-scoring shortlisted job")
-    parser.add_argument("--mode", type=str, choices=["honest", "aggressive", "off"], default="honest", help="Tsenta ATS tailoring mode (default: honest)")
+    parser.add_argument("--mode", type=str, choices=["balanced", "honest", "aggressive", "off"], default="balanced", help="Tsenta ATS tailoring mode (default: balanced - between honest and aggressive)")
     parser.add_argument("--show-diff", action="store_true", default=True, help="Display before/after diff in terminal")
     parser.add_argument("--email-to", type=str, help="Custom recipient for Resend recruiter outreach")
     parser.add_argument("--skip-email", action="store_true", help="Skip automated Resend email dispatch")
