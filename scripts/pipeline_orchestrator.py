@@ -159,7 +159,7 @@ def stage_2_extract_taxonomy(job: dict):
 # =====================================================================
 # STAGE 3: TSENTA 5-STAGE ATS RESUME TAILORING & COMPILATION
 # =====================================================================
-def stage_3_tailor_and_compile_resume(job: dict, target_dir: Path, keywords: dict, profile: dict, mode: str = "honest", show_diff: bool = True):
+def stage_3_tailor_and_compile_resume(job: dict, target_dir: Path, keywords: dict, profile: dict, mode: str = "balanced", show_diff: bool = True):
     print(f"\n[STAGE 3/8] ⚡ [Tsenta Stages 2-5] Dynamic Experience Mapping & ATS Tailoring (Mode: '{mode.upper()}')...")
     
     compiled_pdf, manifest, decomposed, ats_metrics = execute_tsenta_tailoring(
