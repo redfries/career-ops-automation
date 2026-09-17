@@ -218,6 +218,9 @@ def clean_and_score():
             # Skip or keep score lower for out of region
             cur.execute("UPDATE jobs SET match_score = 0 WHERE id = ?", (jid,))
             continue
+        if current_status in ['applied', 'tailored', 'needs_manual_review']:
+            # Do not overwrite application progress states
+            continue
 
         text_corpus = f"{title} {comp} {desc}".lower()
         title_lower = (title or '').lower()
@@ -273,12 +276,20 @@ def clean_and_score():
             score += 4.0
 
         # --- C. EXPERIENCE & SENIORITY FIT (Max 20 pts) ---
-        if any(e in title_lower or e in text_corpus for e in ['intern', 'internship', 'graduate', 'fresh', 'entry level', 'junior', 'trainee', '0-1', '0-2', '0 to 2']):
+        # Exclude / heavily penalize roles requiring > 2 years experience
+        has_gt2_yoe = bool(re.search(
+            r'(?:(?:minimum|at\s+least|min\.?|over|more\s+than)\s+)?'
+            r'(?:[3-9]|1\d|three|four|five|six|seven|eight|nine|ten)\+?\s*(?:years?|yrs?)\b',
+            text_corpus
+        ))
+        if has_gt2_yoe:
+            score -= 35.0
+        elif any(e in title_lower or e in text_corpus for e in ['intern', 'internship', 'graduate', 'fresh', 'entry level', 'junior', 'trainee', '0-1', '0-2', '0 to 2']):
             score += 20.0
         elif 'associate' in title_lower or 'entry' in sen_lower or 'associate' in sen_lower:
             score += 16.0
         elif 'mid-senior' in sen_lower:
-            score += 5.0
+            score -= 10.0
         elif 'not applicable' in sen_lower or not sen_lower:
             score += 10.0
 

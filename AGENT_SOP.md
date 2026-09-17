@@ -82,49 +82,52 @@ All listings in [`data/jobs.db`](data/jobs.db) exist in one of these authoritati
 * **Target Audience**: **0–1 Year Experience / Junior / Entry-Level / Master's Graduate** AI, ML, Computer Vision, and Generative AI roles.
 * **Skip Rule**: Automatically skip mid/senior roles requiring 3–5+ years of commercial AI experience unless explicitly instructed.
 
-### The 7-Step Cadence for Each Job:
+### The Unified 8-Stage Deterministic Cadence for Each Job:
 1. **Direct Application Link Resolution**:
-   - Extract clean direct ATS portal links (Workable, Greenhouse, Lever, or official corporate careers portals) via Firecrawl alongside the original scraped LinkedIn URL to bypass bot walls.
-2. **Sub-Second Tailored Resume Compilation**:
-   - Compile 2-page LaTeX resume with Tectonic (`fast_ats_tailor.py`).
-   - Strict 2-page invariant check via PyMuPDF.
-3. **Resume vs. JD Alignment & Impact Audit**:
-   - Cross-examine the compiled resume against the JD requirements.
-   - Verify keyword coverage, project highlight positioning (e.g. KFUPM thesis, OCR, ViT, RAG), and strict adherence to `data/canonical_profile.json`.
-   - Present transparent Alignment Audit Scorecard to candidate.
-4. **Firecrawl Contact Intelligence**:
-   - Identify active hiring managers, Engineering Directors, Practice Leads, and Talent Acquisition Recruiters.
-   - Resolve verified corporate email patterns and LinkedIn profile URLs.
-5. **Automated JD-Tailored Recruiter Outreach (Resend Engine)**:
-   - Ingest the synthesized JD pitch from `application_package.json`.
-   - Dispatch clean, human-styled email with compiled 2-page `resume.pdf` attached:
-     `python scripts/run_batch.py --email <JOB_ID> --to <RECRUITER_EMAIL>`
-   - Verified cryptographic DKIM/SPF from `shabaaz@infinitys.me` with replies routing directly to `theshabaaz@outlook.com`.
-   - Anti-duplicate safety guard enforces strictly 1 send per bundle.
-6. **Candidate Apply Gate & Interactive Feedback**:
-   - Candidate opens link, submits portal application (or runs browser submitter), verifies outreach dispatch, and notes screening answers.
-7. **Stateful Database Update & Follow-Up**:
-   - Update SQLite database (`data/jobs.db`) with `status = 'applied'`, timestamp `applied_at`, and contact notes before queueing the next listing.
+   - Ingests JD and extracts clean direct ATS portal links (Workable, Greenhouse, Lever, or official corporate careers portals) alongside original scraped LinkedIn URL.
+2. **Technical Taxonomy & Vector Extraction**:
+   - Maps JD requirements across Computer Vision, NLP/LLM, Core ML, and QA testing against the canonical profile.
+3. **Dynamic LaTeX Resume Tailoring & Tectonic Compilation**:
+   - Dynamically tailors `sections/about-me.tex` for the JD requirements and re-prioritizes technical skills.
+   - Compiles via Tectonic with strict PyMuPDF 2-page assertion and SHA256 checksum verification.
+4. **Resume vs. JD Alignment & Provenance Audit**:
+   - Generates structured audit artifacts (`alignment_audit.json` and `alignment_audit.md`) with 100% provenance pass assurance.
+5. **Firecrawl Decision-Maker Discovery**:
+   - Queries LinkedIn & corporate domain via Firecrawl API to extract hiring manager names (CDO, CTO, Head of AI), titles, profile URLs, and verified email patterns -> saved to `hiring_contacts.json`.
+6. **Recruiter Pitch & Package Assembly**:
+   - Synthesizes clean, human-styled cover pitch and 300-char LinkedIn note in `application_package.json`.
+7. **Automated Resend Recruiter Outreach Engine**:
+   - Dispatches cold outreach email with the 2-page `resume.pdf` attached to discovered corporate/recruiter email (e.g. `info@company`, `careers@company`) from `shabaaz@infinitys.me`.
+   - Saves verifiable cryptographic delivery receipt `email_sent_receipt.json` (Resend ID, timestamp, and audit dashboard link).
+   - Enforces deduplication guard so emails are never sent twice to the same target.
+8. **Candidate Review Cockpit & Database State Lock**:
+   - Prints full application brief with authoritative Resend delivery proof badge.
+   - Locks DB status strictly to `tailored` (keeping `applied_at = NULL` until portal submission is confirmed via `--confirm-applied`).
 
 ---
 
 ## 5. Master CLI Cockpit & Script Reference
 
-AI Agents should invoke these scripts via shell commands:
+AI Agents must invoke these deterministic scripts:
 
 ```powershell
 # 1. View overall pipeline metrics and queue health
 python scripts/run_batch.py --status
 
-# 2. Tailor resume for a specific job by ID (generates application folder & 2-page PDF)
-python scripts/fast_ats_tailor.py --job-id <JOB_ID>
+# 2. Run the deterministic 7-stage pipeline for a job (Dynamic LaTeX, Tectonic 2-page, Firecrawl contacts, Audit)
+python scripts/pipeline_orchestrator.py --job-id <JOB_ID>
+# Or via batch cockpit:
+python scripts/run_batch.py --tailor-job <JOB_ID>
 
 # 3. Automatically dispatch tailored outreach email with 2-page PDF resume attached
 python scripts/send_resend_email.py --app-dir applications/<BUNDLE_DIR> --to <RECRUITER_EMAIL>
+# Or via batch cockpit:
+python scripts/run_batch.py --email <JOB_ID> --to <RECRUITER_EMAIL>
 
-# 4. Update job status to applied with outreach notes in SQLite DB
-python -c "import sqlite3, datetime; conn=sqlite3.connect('data/jobs.db'); cur=conn.cursor(); cur.execute('UPDATE jobs SET status=\'applied\', applied_at=?, notes=? WHERE id=?', (datetime.datetime.now().isoformat(), 'Applied via portal and sent cold email', '<JOB_ID>')); conn.commit()"
-
+# 4. Safely update job status to applied ONLY when confirmed submitted
+python scripts/pipeline_orchestrator.py --confirm-applied <JOB_ID> --notes "Applied via portal"
+# Or via batch cockpit:
+python scripts/run_batch.py --confirm-applied <JOB_ID> --notes "Applied via portal"
 ```
 
 ---

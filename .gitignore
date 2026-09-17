@@ -19,7 +19,7 @@ Thumbs.db
 
 # Archives & Backups
 *.zip
-*.bak
+*.bak*
 scratch_*.md
 
 data/browser_profile/

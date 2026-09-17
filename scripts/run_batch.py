@@ -73,9 +73,30 @@ def show_status():
     print("=" * 55 + "\n")
 
 def run_tailor(limit: int):
-    print(f"\n🎯 Launching Tailoring Engine for top {limit} shortlisted job(s)...")
-    cmd = [sys.executable, "scripts/fast_ats_tailor.py", "--limit", str(limit)]
-    subprocess.run(cmd)
+    print(f"\n🎯 Launching Full 7-Stage Pipeline Orchestrator for top {limit} shortlisted job(s)...")
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, company, title 
+        FROM jobs 
+        WHERE status = 'shortlisted' 
+        ORDER BY match_score DESC 
+        LIMIT ?
+    """, (limit,))
+    rows = cur.fetchall()
+    conn.close()
+
+    if not rows:
+        print("⚠️ No shortlisted jobs found ready to process.")
+        return
+
+    for jid, comp, title in rows:
+        print(f"\n>>> Running Pipeline for: {comp} - {title} (#{jid})")
+        cmd = [sys.executable, "scripts/pipeline_orchestrator.py", "--job-id", str(jid)]
+        res = subprocess.run(cmd)
+        if res.returncode != 0:
+            print(f"❌ Pipeline failed for job #{jid}. Halting batch to preserve integrity.")
+            break
 
 def run_apply(limit: int, mode: str):
     conn = get_db_connection()
@@ -116,14 +137,22 @@ def main():
     parser.add_argument("--to", type=str, help="Recipient email address for outreach")
     parser.add_argument("--force", action="store_true", help="Force resend email even if already dispatched")
 
+    parser.add_argument("--confirm-applied", type=str, metavar="JOB_ID", help="Safely record verified submission in DB")
+    parser.add_argument("--notes", type=str, help="Application notes for confirm-applied")
+
     args = parser.parse_args()
 
     if args.status or len(sys.argv) == 1:
         show_status()
+    elif args.confirm_applied:
+        cmd = [sys.executable, "scripts/pipeline_orchestrator.py", "--confirm-applied", args.confirm_applied]
+        if args.notes:
+            cmd.extend(["--notes", args.notes])
+        subprocess.run(cmd)
     elif args.tailor:
         run_tailor(args.tailor)
     elif args.tailor_job:
-        cmd = [sys.executable, "scripts/fast_ats_tailor.py", "--job-id", args.tailor_job]
+        cmd = [sys.executable, "scripts/pipeline_orchestrator.py", "--job-id", args.tailor_job]
         subprocess.run(cmd)
     elif args.apply:
         run_apply(args.apply, args.mode)

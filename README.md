@@ -12,34 +12,35 @@ An autonomous, deterministic job application automation system designed for AI &
                                         ├── Status: shortlisted (Score >= 80)
                                         ▼
  ┌────────────────────────────────────────────────────────────────────────────────────────┐
- │ 1. ATS RESUME & JD TAILORING ENGINE (scripts/fast_ats_tailor.py)                       │
- │    • Ingests job posting & canonical_profile.json                                      │
- │    • Deep technical taxonomy matching (ViT, PyTorch, LangChain, RAG, OCR, QA)          │
- │    • Dynamically tailors Awesome-CV LaTeX master source in my-resume/                 │
- │    • Compiles via Tectonic engine in ~3.5s (Strict 2-Page PDF assertion)               │
- │    • Synthesizes human-styled, JD-tailored pitch in application_package.json          │
- │    • Exports bundle to applications/<date>_<company>_<job_id>/                         │
+ │ UNIFIED DETERMINISTIC PIPELINE ORCHESTRATOR (scripts/pipeline_orchestrator.py)         │
+ │    • Stage 1: Ingestion, validation & direct portal link resolution                    │
+ │    • Stage 2: Technical taxonomy mapping (ViT, PyTorch, LangChain, RAG, OCR, QA)       │
+ │    • Stage 3: Dynamic LaTeX tailoring (sections/about-me.tex) & Tectonic compilation    │
+ │    • Stage 4: Resume vs JD alignment audit (Strict PyMuPDF 2-page assertion)          │
+ │    • Stage 5: Firecrawl decision-maker intelligence (LinkedIn & corporate inboxes)     │
+ │    • Stage 6: Application package & human-styled pitch assembly                        │
+ │    • Stage 7: Automated Resend recruiter outreach (resume.pdf attached, proof logged)  │
+ │    • Stage 8: Candidate review cockpit & state lock (tailored)                         │
  └──────────────────────────────────────┬─────────────────────────────────────────────────┘
                                         │
-                                        ├── Status: tailored
+                                        ├── Status: tailored (cryptographic receipt logged)
                                         ▼
              ┌──────────────────────────┴──────────────────────────┐
              ▼                                                     ▼
  ┌──────────────────────────────────────┐  ┌──────────────────────────────────────────────┐
- │ 2. DIRECT RECRUITER OUTREACH         │  │ 3. BROWSER SUBMITTER & MEDIATOR              │
- │    (scripts/send_resend_email.py)    │  │    (scripts/browser_apply_engine.py)          │
- │    • Verified DKIM/SPF from          │  │    • Persistent Chrome profile context        │
- │      shabaaz@infinitys.me            │  │    • Autofills ATS fields (Greenhouse, Lever) │
- │    • Native human layout (no AI tags)│  │    • Attaches verified 2-page resume.pdf      │
- │    • Auto-attaches resume.pdf        │  │    • 45s Mediator Supervisor Loop             │
- │    • Reply-To: theshabaaz@outlook.com│  │    • Diagnostic screenshots on timeout        │
- │    • Anti-duplicate safety guard     │  │    • Saves full-page submission receipt.png   │
+ │ DIRECT RECRUITER OUTREACH (RESEND)   │  │ BROWSER SUBMITTER & MEDIATOR                 │
+ │ (scripts/send_resend_email.py)       │  │ (scripts/browser_apply_engine.py)             │
+ │ • Verified DKIM/SPF: shabaaz@        │  │ • Persistent Chrome profile context          │
+ │   infinitys.me                       │  │ • Autofills ATS fields (Greenhouse, Lever)    │
+ │ • Auto-attaches verified 2-page PDF  │  │ • Attaches verified 2-page resume.pdf         │
+ │ • Logs Resend delivery ID proof      │  │ • 45s Mediator Supervisor Loop                │
+ │ • Anti-duplicate safety guard        │  │ • Saves full-page submission receipt.png      │
  └──────────────────┬───────────────────┘  └──────────────────────┬───────────────────────┘
                     │                                             │
                     └─────────────────────┬───────────────────────┘
                                           ▼
-                                Status: applied / outreach_sent
-                               (cryptographic receipts saved)
+                                    Status: applied
+                             (audited receipts verified)
 ```
 
 ---
@@ -115,15 +116,17 @@ Inspect active application queues and state breakdown across all scraped jobs:
 python scripts/run_batch.py --status
 ```
 
-### 2. Tailor Resumes in Batch
-Tailor application bundles and 2-page PDFs for the top $N$ shortlisted jobs:
+### 2. Run Full 8-Stage Pipeline for a Job
+Ingests JD, dynamically tailors LaTeX, compiles 2-page PDF via Tectonic, runs Firecrawl decision-maker intelligence, auto-attaches PDF, dispatches Resend cold email, and records delivery proof:
 ```powershell
-python scripts/run_batch.py --tailor 5
+python scripts/pipeline_orchestrator.py --job-id <JOB_ID>
+# Or via batch cockpit:
+python scripts/run_batch.py --tailor-job <JOB_ID>
 ```
 
-### 3. Tailor a Specific Job
+### 3. Run Pipeline for Next Shortlisted Jobs in Batch
 ```powershell
-python scripts/fast_ats_tailor.py --job-id 4460970498
+python scripts/run_batch.py --tailor 5
 ```
 
 ### 4. Run Browser Submitter in Assisted Mode (with Mediator)
@@ -132,10 +135,10 @@ Launches the persistent Chrome browser, auto-fills standard details, attaches th
 python scripts/run_batch.py --apply 3 --mode assisted
 ```
 
-### 5. Safe Dry-Run (Verification Mode)
-Opens the job application portal, fills fields, uploads resume, captures a full-page verification screenshot (`dry_run_preview.png`), and closes without clicking Submit:
+### 5. Confirm Application in Database
+Permanently records your submission in SQLite DB:
 ```powershell
-python scripts/browser_apply_engine.py --job-id 4460970498 --mode dry-run
+python scripts/pipeline_orchestrator.py --confirm-applied <JOB_ID> --notes "Applied via portal"
 ```
 
 ---
