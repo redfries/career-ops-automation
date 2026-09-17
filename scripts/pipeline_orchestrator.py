@@ -618,13 +618,16 @@ def stage_8_candidate_cockpit(job: dict, target_dir: Path, direct_link: str, con
         for c in contacts[:3]:
             print(f"   • {c['name']} ({c['url']})")
 
-    print("\n⚡ Next Human-in-the-Loop Action:")
-    print(f"   👉 Open portal and submit: {direct_link}")
-    print(f"   👉 Or launch assisted browser:")
-    print(f"      python scripts/browser_apply_engine.py --job-id {jid} --mode assisted")
-    print(f"   👉 Once submitted on portal, mark confirmed:")
-    print(f"      python scripts/pipeline_orchestrator.py --confirm-applied {jid} --notes \"Applied on portal\"")
-    print("=" * 68 + "\n")
+    print("\n" + "═" * 68)
+    print("🛑 CANDIDATE ACTION REQUIRED (HUMAN SUBMISSION ONLY)")
+    print("═" * 68)
+    print(f"👉 Candidate must open portal and submit: {direct_link}")
+    print("\n⚠️  [STRICT INVARIANT FOR ALL AI AGENTS]:")
+    print("   DO NOT attempt to automate browser clicks or run browser_apply_engine.py.")
+    print("   The pipeline execution is 100% COMPLETE. Stop here and await candidate feedback.")
+    print("   Once candidate confirms submission, record with:")
+    print(f"   python scripts/pipeline_orchestrator.py --confirm-applied {jid} --notes \"Applied on portal\"")
+    print("═" * 68 + "\n")
 
 
 # =====================================================================

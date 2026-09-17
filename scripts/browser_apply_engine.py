@@ -285,7 +285,7 @@ def apply_to_job(folder_path: str, mode: str = "assisted", max_deadline_sec: flo
                 (['#last_name', 'input[name*="last_name" i]', 'input[name*="lastName" i]', 'input[id*="last" i]'], cand["last_name"]),
                 (['#email', 'input[type="email"]', 'input[name*="email" i]', 'input[id*="email" i]'], cand["email"]),
                 (['#phone', 'input[type="tel"]', 'input[name*="phone" i]', 'input[id*="phone" i]'], cand["phone"]),
-                (['#candidate-location', 'input[name*="city" i]', 'input[name*="location" i]'], cand["city"]),
+                (['#candidate-location', 'input[name*="city" i]', 'input[name*="location" i]'], cand.get("city", cand.get("location", "Dhahran"))),
                 (['input[name*="linkedin" i]', 'input[id*="linkedin" i]', 'input[placeholder*="linkedin" i]'], cand["links"]["linkedin"]),
                 (['input[name*="website" i]', 'input[id*="website" i]', 'input[placeholder*="portfolio" i]'], cand["links"]["portfolio"]),
                 (['input[name*="github" i]', 'input[id*="github" i]'], cand["links"]["github"]),

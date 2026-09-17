@@ -1,7 +1,8 @@
 # Agent Standard Operating Procedure (SOP) — Career-Ops Automation
 
 > **CRITICAL DIRECTIVE FOR ALL AI AGENTS (Claude Code, Antigravity, Gemini, Codex)**:
-> This workspace implements a deterministic, fail-safe automation architecture modeled after production workflow engines (like n8n). Agents operating in this codebase must strictly adhere to these instructions. **Never bypass deterministic scripts with conversational improvisation.**
+> 1. **ZERO AUTONOMOUS BROWSER AUTOMATION**: AI agents must **NEVER** run `browser_apply_engine.py` or attempt to automate browser clicks on LinkedIn / job portals. Applying on the portal is strictly human-in-the-loop. The agent's job is complete at Stage 8 (generating the tailored bundle, 2-page PDF, Firecrawl contacts, and dispatching cold outreach via Resend).
+> 2. **DETERMINISTIC SCRIPTS ONLY**: This workspace implements a deterministic, fail-safe automation architecture modeled after production workflow engines (like n8n). Agents operating in this codebase must strictly adhere to these instructions. **Never bypass deterministic scripts with conversational improvisation.**
 
 ---
 
@@ -64,9 +65,9 @@ All listings in [`data/jobs.db`](data/jobs.db) exist in one of these authoritati
 
 | Status | Meaning | Action Needed |
 | :--- | :--- | :--- |
-| `shortlisted` | Scored $\ge 80\%$ by evaluation filter | Run `fast_ats_tailor.py` to create bundle & 2-page PDF |
-| `tailored` | Application bundle & 2-page PDF verified on disk | Ready for `browser_apply_engine.py` |
-| `applied` | Form submitted, full-page `receipt.png` saved | Application complete; synced to tracker |
+| `shortlisted` | Scored $\ge 80\%$ by evaluation filter | Run `pipeline_orchestrator.py` to create bundle, 2-page PDF & Firecrawl outreach |
+| `tailored` | Application bundle & 2-page PDF verified on disk | Dispatched Resend outreach; ready for candidate portal submission |
+| `applied` | Form submitted or confirmed by candidate | Application complete; recorded in DB |
 | `needs_manual_review` | Mediator timed out (AFK), custom complex screener | Requires user to review `timeout_diagnostic.png` |
 | `low_fit` | Scored $< 80\%$ against profile | Retained in DB for market intelligence |
 | `out_of_region` | Located in US/EU requiring sponsorship | Excluded from active application loop |
