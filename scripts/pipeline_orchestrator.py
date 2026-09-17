@@ -2,14 +2,15 @@
 scripts/pipeline_orchestrator.py
 Unified, Deterministic Career-Ops Pipeline Orchestrator (Fail-Safe Architecture)
 
-Chains all 7 hard stages into an automated, fail-fast DAG:
+Chains all 8 hard stages into an automated, fail-fast DAG:
   Stage 1: Job Ingestion & Validation & Direct Link Resolution
-  Stage 2: Technical Taxonomy & Keyword Extraction
-  Stage 3: Dynamic LaTeX Resume Tailoring & Tectonic Compilation (Strict 2-Page Invariant)
+  Stage 2: Technical Taxonomy & Keyword Extraction (Tsenta JD Decomposition)
+  Stage 3: Tsenta 5-Stage ATS Resume Tailoring & Tectonic Compilation (Strict 2-Page & Zero-Iqama Invariant)
   Stage 4: Resume vs. JD Alignment & Impact Audit (Scorecard & JSON/MD output)
   Stage 5: Firecrawl Contact Intelligence Engine (Hiring Managers, LinkedIn, Emails)
   Stage 6: Recruiter Pitch & Application Package Assembly
-  Stage 7: Candidate Review Cockpit & DB State Invariant (Status: 'tailored', applied_at: NULL)
+  Stage 7: Automated Resend Recruiter Outreach Engine (Proof & Verification)
+  Stage 8: Candidate Review Cockpit & DB State Invariant (Human-in-the-Loop Submission)
 
 Fail-Fast Guarantee: Any error or invariant violation immediately halts execution with exit code 1,
 logs the failure to pipeline_error.log, and flags the database row as 'needs_manual_review'.
@@ -78,7 +79,7 @@ def slugify(text: str) -> str:
 # STAGE 1: INGESTION & VALIDATION & DIRECT LINK RESOLUTION
 # =====================================================================
 def stage_1_ingest_and_validate(job_id: str):
-    print(f"\n[STAGE 1/7] 🔍 Ingesting & Validating Job #{job_id}...")
+    print(f"\n[STAGE 1/8] 🔍 Ingesting & Validating Job #{job_id}...")
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
@@ -236,7 +237,7 @@ def stage_4_alignment_audit(job: dict, target_dir: Path, keywords: dict, ats_met
 # STAGE 5: DETERMINISTIC FIRECRAWL CONTACT INTELLIGENCE
 # =====================================================================
 def stage_5_firecrawl_contact_intelligence(job: dict, target_dir: Path):
-    print("\n[STAGE 5/7] 🕵️ Executing Firecrawl Decision-Maker Discovery...")
+    print("\n[STAGE 5/8] 🕵️ Executing Firecrawl Decision-Maker Discovery...")
     company = job.get('company', '').strip()
     website = job.get('company_website', '').strip()
     
@@ -316,7 +317,7 @@ def stage_5_firecrawl_contact_intelligence(job: dict, target_dir: Path):
 # STAGE 6: RECRUITER PITCH & APPLICATION PACKAGE ASSEMBLY
 # =====================================================================
 def stage_6_assemble_package(job: dict, target_dir: Path, keywords: dict, profile: dict, compiled_pdf: Path):
-    print("\n[STAGE 6/7] 📦 Assembling Recruiter Pitch & Application Package...")
+    print("\n[STAGE 6/8] 📦 Assembling Recruiter Pitch & Application Package...")
     cand = profile.get('candidate', {})
     company = job.get('company', '')
     title = job.get('title', '')
