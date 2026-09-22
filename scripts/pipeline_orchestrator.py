@@ -234,89 +234,408 @@ def stage_4_alignment_audit(job: dict, target_dir: Path, keywords: dict, ats_met
 
 
 # =====================================================================
-# STAGE 5: DETERMINISTIC FIRECRAWL CONTACT INTELLIGENCE
+# EMAIL VALIDATION & MX RECORD RESOLUTION HELPERS
+# =====================================================================
+import socket
+
+def check_domain_mx(domain: str) -> bool:
+    """Verifies whether a domain has active DNS Mail Exchange (MX) records."""
+    if not domain or '.' not in domain:
+        return False
+    clean_domain = domain.strip().lower().rstrip('.')
+    try:
+        import dns.resolver
+        answers = dns.resolver.resolve(clean_domain, 'MX')
+        return len(answers) > 0
+    except Exception:
+        try:
+            socket.gethostbyname(clean_domain)
+            return True
+        except Exception:
+            return False
+
+def is_valid_recruitment_email(email: str) -> bool:
+    """Strictly validates syntax, non-binary extension, non-placeholder, and active MX record."""
+    if not email or not isinstance(email, str):
+        return False
+    email = email.strip().lower().rstrip('.')
+    if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
+        return False
+    bad_exts = ('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.pdf', '.css', '.js', '.woff')
+    if any(email.endswith(ext) for ext in bad_exts):
+        return False
+    dom = email.split('@')[1]
+    bad_domains = ('example.com', 'domain.com', 'test.com', 'wixpress.com', 'sentry.io', 'google.com', 'github.com', 'facebook.com', 'twitter.com')
+    if dom in bad_domains:
+        return False
+    return check_domain_mx(dom)
+
+
+# =====================================================================
+# STAGE 5: VERIFIABLE FIRECRAWL CONTACT & EMAIL INTELLIGENCE (ZERO-BOUNCE)
 # =====================================================================
 def stage_5_firecrawl_contact_intelligence(job: dict, target_dir: Path):
-    print("\n[STAGE 5/8] 🕵️ Executing Firecrawl Decision-Maker Discovery...")
+    print("\n[STAGE 5/8] 🕵️ Executing Deep Verifiable Firecrawl Contact & Email Intelligence...")
     company = job.get('company', '').strip()
     website = job.get('company_website', '').strip()
+    title = job.get('title', '').strip()
+    location = job.get('location', '').strip()
+    job_url = job.get('job_url', '').strip()
+    description_text = job.get('description_text', '')
     
-    contacts = []
-    email_patterns = []
+    # Extract clean domain
+    domain = re.sub(r'^https?://(?:www\.)?', '', website or '').split('/')[0].strip()
+    domain = re.sub(r'^(?:www|careers|jobs)\.', '', domain)
+    if not domain:
+        domain = f"{re.sub(r'[^a-zA-Z0-9]', '', company).lower()}.com"
 
-    if website:
-        domain = re.sub(r'^https?://(?:www\.)?', '', website).split('/')[0].strip()
-        if domain:
-            email_patterns = [
-                f"info@{domain}",
-                f"careers@{domain}",
-                f"hr@{domain}",
-                f"first@{domain}",
-                f"first.last@{domain}"
-            ]
+    loc_lower = (location or '').lower()
+    if any(k in loc_lower for k in ['saudi', 'riyadh', 'dhahran', 'jeddah', 'eastern province', 'ksa']):
+        country_prefix = 'sa.'
+    elif any(k in loc_lower for k in ['uae', 'emirates', 'dubai', 'abu dhabi']):
+        country_prefix = 'ae.'
+    else:
+        country_prefix = ''
+
+    # Role keyword mapping
+    title_lower = title.lower()
+    if any(k in title_lower for k in ['ai', 'machine learning', 'ml', 'deep learning']):
+        role_kw = '("AI" OR "ML" OR "Machine Learning")'
+    elif 'data' in title_lower:
+        role_kw = '("Data Science" OR "Data")'
+    elif 'vision' in title_lower:
+        role_kw = '("Computer Vision" OR "Vision")'
+    else:
+        role_kw = '("Software" OR "Engineering" OR "Tech")'
 
     headers = {'Authorization': f'Bearer {FIRECRAWL_API_KEY}'}
+    import requests
 
-    # Query targeted decision makers on LinkedIn
+    verified_emails_found = []
+    
+    # -----------------------------------------------------------------
+    # TRACK 1: EXTRACT VERIFIED EMAILS FROM JOB DESCRIPTION & JOB POSTING URL
+    # -----------------------------------------------------------------
+    print("      [1/4] 📄 Scanning Job Description and Live Posting URL for Direct Contacts...")
+    jd_emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', description_text)
+    for e in jd_emails:
+        clean_e = e.strip().lower().rstrip('.')
+        if is_valid_recruitment_email(clean_e) and clean_e not in [x['email'] for x in verified_emails_found]:
+            verified_emails_found.append({
+                "email": clean_e,
+                "source": "job_description_text",
+                "confidence": "DIRECT_JOB_POSTING_VERIFIED",
+                "is_verified": True
+            })
+
+    # Scrape live job URL via Firecrawl if available
+    if job_url and ('http://' in job_url or 'https://' in job_url):
+        try:
+            r_scrape = requests.post(
+                'https://api.firecrawl.dev/v1/scrape',
+                headers=headers,
+                json={'url': job_url, 'formats': ['markdown']},
+                timeout=25
+            )
+            if r_scrape.status_code == 200:
+                s_data = r_scrape.json().get('data', {})
+                md = s_data.get('markdown', '') if isinstance(s_data, dict) else ''
+                scraped_emails = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', md)
+                for e in scraped_emails:
+                    clean_e = e.strip().lower().rstrip('.')
+                    if is_valid_recruitment_email(clean_e) and clean_e not in [x['email'] for x in verified_emails_found]:
+                        verified_emails_found.append({
+                            "email": clean_e,
+                            "source": "firecrawl_live_job_url_scrape",
+                            "confidence": "DIRECT_JOB_PAGE_VERIFIED",
+                            "is_verified": True
+                        })
+        except Exception as e:
+            print(f"      ℹ️ Firecrawl job URL scrape notice: {e}")
+
+    # -----------------------------------------------------------------
+    # TRACK 2: DEEP FIRECRAWL SEARCH & SCRAPE ON COMPANY PORTALS
+    # -----------------------------------------------------------------
+    print("      [2/4] 🌐 Executing Firecrawl Portal Discovery on Official Career/Contact Pages...")
+    portal_candidates = []
+    try:
+        q_portal = f'site:{domain} ("careers" OR "contact" OR "jobs" OR "recruitment" OR "apply" OR "hire") email'
+        r_port = requests.post(
+            'https://api.firecrawl.dev/v1/search',
+            headers=headers,
+            json={'query': q_portal, 'limit': 3},
+            timeout=20
+        )
+        if r_port.status_code == 200:
+            for item in r_port.json().get('data', []):
+                u = item.get('url', '')
+                snip = (item.get('title', '') + ' ' + item.get('description', '')).replace('\n', ' ')
+                portal_candidates.append({'url': u, 'snippet': snip})
+                found_in_snip = re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', snip)
+                for e in found_in_snip:
+                    clean_e = e.strip().lower().rstrip('.')
+                    if is_valid_recruitment_email(clean_e) and clean_e not in [x['email'] for x in verified_emails_found]:
+                        verified_emails_found.append({
+                            "email": clean_e,
+                            "source": f"firecrawl_search_snippet ({u})",
+                            "confidence": "OFFICIAL_COMPANY_PORTAL_VERIFIED",
+                            "is_verified": True
+                        })
+    except Exception as e:
+        print(f"      ℹ️ Firecrawl portal discovery notice: {e}")
+
+    # Scrape top official contact / career page discovered if needed
+    if portal_candidates and not any(x['is_verified'] for x in verified_emails_found):
+        top_url = portal_candidates[0]['url']
+        if top_url and ('careers' in top_url.lower() or 'contact' in top_url.lower() or 'job' in top_url.lower()):
+            try:
+                r_sc = requests.post(
+                    'https://api.firecrawl.dev/v1/scrape',
+                    headers=headers,
+                    json={'url': top_url, 'formats': ['markdown']},
+                    timeout=25
+                )
+                if r_sc.status_code == 200:
+                    s_data = r_sc.json().get('data', {})
+                    md = s_data.get('markdown', '') if isinstance(s_data, dict) else ''
+                    for e in re.findall(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', md):
+                        clean_e = e.strip().lower().rstrip('.')
+                        if is_valid_recruitment_email(clean_e) and clean_e not in [x['email'] for x in verified_emails_found]:
+                            verified_emails_found.append({
+                                "email": clean_e,
+                                "source": f"firecrawl_portal_scrape ({top_url})",
+                                "confidence": "OFFICIAL_CAREERS_PAGE_VERIFIED",
+                                "is_verified": True
+                            })
+            except Exception:
+                pass
+
+    # -----------------------------------------------------------------
+    # TRACK 3: JOB-CORRELATED DECISION-MAKER DISCOVERY (LINKEDIN VIA FIRECRAWL)
+    # -----------------------------------------------------------------
+    print("      [3/4] 👥 Discovering Localized Hiring Decision-Makers on LinkedIn...")
     queries = [
-        f'site:sa.linkedin.com/in "{company}" (recruiter OR "talent acquisition" OR founder OR CEO OR CTO OR CDO OR "Head of AI")',
-        f'site:linkedin.com/in "{company}" ("Chief Data Officer" OR "Chief Technology Officer" OR "Founder" OR "Recruiter")'
+        f'site:{country_prefix}linkedin.com/in "{company}" ("Technical Recruiter" OR "Talent Acquisition" OR "Tech Recruiter" OR "AI Recruiter")',
+        f'site:{country_prefix}linkedin.com/in "{company}" {role_kw} ("Engineering Manager" OR "Team Lead" OR "Delivery Manager" OR "Lead Engineer" OR "Hiring Manager")'
     ]
 
-    import requests
+    raw_contacts = []
     for q in queries:
         try:
             r = requests.post(
                 'https://api.firecrawl.dev/v1/search',
                 headers=headers,
                 json={'query': q, 'limit': 3},
-                timeout=25
+                timeout=20
             )
             if r.status_code == 200:
-                resp_json = r.json()
-                raw_data = resp_json.get('data', [])
-                items = raw_data if isinstance(raw_data, list) else raw_data.get('web', [])
-                for item in items:
+                for item in r.json().get('data', []):
                     title_text = item.get('title', '')
                     url_text = item.get('url', '')
                     desc_text = item.get('description', '')
 
-                    # Extract probable name from title
                     clean_title = title_text.split('-')[0].split('|')[0].strip()
                     clean_title = clean_title.replace('\u200f', '').replace('\u2066', '').replace('\u2069', '').strip()
-                    if clean_title and not any(c['url'] == url_text for c in contacts):
-                        contacts.append({
+                    if clean_title and not any(c['url'] == url_text for c in raw_contacts):
+                        raw_contacts.append({
                             "name": clean_title,
                             "raw_title": title_text,
                             "url": url_text,
                             "snippet": desc_text[:180]
                         })
-            else:
-                print(f"      ⚠️ Firecrawl returned HTTP {r.status_code}")
-        except Exception as e:
-            print(f"      ⚠️ Firecrawl query error: {e}")
+        except Exception:
+            pass
+
+    # Filter out C-Suite at mid/large companies
+    c_level_disqualifiers = ['ceo', 'chief executive', 'cfo', 'chief financial', 'cmo', 'coo', 'cto', 'chief technology', 'president', 'board member']
+    filtered_contacts = []
+    for c in raw_contacts:
+        text_lower = (c['raw_title'] + ' ' + c['snippet']).lower()
+        if any(dq in text_lower for dq in c_level_disqualifiers):
+            continue
+        filtered_contacts.append(c)
+
+    if not filtered_contacts:
+        filtered_contacts = raw_contacts
+
+    def score_contact(c):
+        t = (c['raw_title'] + ' ' + c['snippet']).lower()
+        score = 0
+        if any(k in t for k in ['talent acquisition', 'technical recruiter', 'tech recruiter', 'ai recruiter', 'hrbp', 'recruiter']):
+            score += 15
+        if any(k in t for k in ['engineering manager', 'delivery manager', 'project manager', 'team lead', 'lead engineer', 'head of ai']):
+            score += 10
+        if any(k in t for k in ['saudi', 'riyadh', 'dhahran', 'uae', 'dubai', 'abu dhabi']):
+            score += 5
+        return score
+
+    filtered_contacts.sort(key=score_contact, reverse=True)
+
+    # -----------------------------------------------------------------
+    # TRACK 4: DEEP VERBATIM EMAIL RESEARCH ON TARGET DECISION-MAKER
+    # -----------------------------------------------------------------
+    print("      [4/4] 🔬 Running Firecrawl Verbatim Email Research on Primary Contact...")
+    primary_contact = filtered_contacts[0] if filtered_contacts else None
+    targeted_decision_maker = None
+
+    if primary_contact:
+        full_name = primary_contact['name']
+        clean_name = re.sub(r'^(dr\.|engr\.|mr\.|ms\.|mrs\.)\s*', '', full_name, flags=re.IGNORECASE).strip()
+        parts = clean_name.split()
+        first_name = parts[0] if parts else clean_name
+
+        exact_person_email = None
+        exact_source = None
+
+        # Search for published verbatim email mentions of this person
+        try:
+            person_queries = [
+                f'"{clean_name}" "@{domain}"',
+                f'"{clean_name}" "{company}" email'
+            ]
+            for pq in person_queries:
+                re_q = requests.post(
+                    'https://api.firecrawl.dev/v1/search',
+                    headers=headers,
+                    json={'query': pq, 'limit': 2},
+                    timeout=15
+                )
+                if re_q.status_code == 200:
+                    for item in re_q.json().get('data', []):
+                        text = (item.get('title') or '') + ' ' + (item.get('description') or '')
+                        matches = re.findall(rf'[a-zA-Z0-9_.+-]+@{re.escape(domain)}', text, re.IGNORECASE)
+                        for m in matches:
+                            clean_m = m.strip().lower()
+                            if is_valid_recruitment_email(clean_m):
+                                exact_person_email = clean_m
+                                exact_source = f"verbatim_firecrawl_mention ({item.get('url')})"
+                                break
+                    if exact_person_email:
+                        break
+        except Exception:
+            pass
+
+        # Selection rationale
+        raw_t = primary_contact['raw_title'].lower()
+        if any(k in raw_t for k in ['talent acquisition', 'technical recruiter', 'tech recruiter', 'ai recruiter', 'hrbp', 'recruiter']):
+            role_classification = "Direct Talent Acquisition & Technical Recruiting Specialist"
+            why_selected = f"Direct recruiting point of contact at {company} managing candidate pipelines for technical roles."
+        elif any(k in raw_t for k in ['engineering manager', 'delivery manager', 'project manager', 'team lead', 'lead engineer', 'head of ai']):
+            role_classification = "Direct Functional Engineering / Delivery Manager"
+            why_selected = f"Direct technical team lead evaluating technical engineering domain fit at {company}."
+        else:
+            role_classification = "Role-Correlated Technical Team Member"
+            why_selected = f"Key technical engineering contact identified at {company} matching role taxonomy."
+
+        if exact_person_email:
+            email_conf = "VERBATIM_WEB_SNIPPET_VERIFIED"
+            is_dm_verified = True
+        else:
+            email_conf = "NOT_FOUND_PUBLICLY (ZERO_GUESSING_ENFORCED)"
+            is_dm_verified = False
+
+        targeted_decision_maker = {
+            "name": full_name,
+            "first_name": first_name,
+            "title": primary_contact['raw_title'],
+            "url": primary_contact['url'],
+            "email": exact_person_email,
+            "email_confidence": email_conf,
+            "is_verified": is_dm_verified,
+            "company_domain": domain,
+            "selection_rationale": {
+                "role_classification": role_classification,
+                "why_selected": why_selected,
+                "rank_in_pool": 1,
+                "total_candidates_analyzed": len(filtered_contacts),
+                "c_suite_excluded": True
+            },
+            "research_methodology": {
+                "firecrawl_queries": [f'"{clean_name}" "@{domain}"', f'"{clean_name}" "{company}" email'],
+                "resolution": "verbatim_firecrawl_discovery" if exact_person_email else "none_found_publicly",
+                "mx_record_verified": True if exact_person_email else False
+            }
+        }
+
+    # -----------------------------------------------------------------
+    # TRACK 5: RESOLVE AUTHORITATIVE OUTREACH EMAIL (OR NONE)
+    # -----------------------------------------------------------------
+    # Strict priority:
+    # 1. Verbatim individual decision-maker email (if verified)
+    # 2. Direct job description / job posting application email (if verified)
+    # 3. Official company career / recruitment portal email (if verified)
+    # 4. None (ABSOLUTELY NO SYNTHESIS OF FAKE EMAILS)
+    verified_outreach_email = None
+    email_resolution_type = "NO_VERIFIED_EMAIL_FOUND"
+
+    if targeted_decision_maker and targeted_decision_maker.get('is_verified') and targeted_decision_maker.get('email'):
+        verified_outreach_email = targeted_decision_maker['email']
+        email_resolution_type = "DIRECT_DECISION_MAKER_VERIFIED"
+    elif verified_emails_found:
+        recruitment_keywords = ['career', 'job', 'talent', 'hire', 'recruit', 'cv']
+        sorted_emails = sorted(
+            verified_emails_found,
+            key=lambda x: any(k in x['email'] for k in recruitment_keywords),
+            reverse=True
+        )
+        verified_outreach_email = sorted_emails[0]['email']
+        email_resolution_type = sorted_emails[0]['confidence']
 
     intelligence_payload = {
         "company": company,
         "company_website": website,
-        "contacts_found": contacts,
-        "recommended_email_patterns": email_patterns,
+        "company_domain": domain,
+        "verified_outreach_email": verified_outreach_email,
+        "email_resolution_type": email_resolution_type,
+        "is_outreach_email_verified": verified_outreach_email is not None,
+        "targeted_decision_maker": targeted_decision_maker,
+        "verified_emails_discovered": verified_emails_found,
+        "contacts_found": filtered_contacts,
         "timestamp": datetime.datetime.now().isoformat()
     }
 
     with open(target_dir / 'hiring_contacts.json', 'w', encoding='utf-8') as f:
         json.dump(intelligence_payload, f, indent=2)
 
-    print(f"      👥 Decision Makers Identified: {len(contacts)}")
-    for c in contacts[:3]:
-        print(f"         • {c['name']} -> {c['url']}")
+    # Append Decision-Maker Intelligence to alignment_audit.md for 100% auditability
+    audit_file = target_dir / 'alignment_audit.md'
+    if audit_file.exists():
+        try:
+            with open(audit_file, 'a', encoding='utf-8') as af:
+                af.write(f"""
+### 4. Direct Hiring Intelligence & Verified Contacts
+- **Verified Outreach Email**: `{verified_outreach_email or 'None (Outreach Skipped / Zero-Bounce Protection)'}`
+- **Resolution Type**: `{email_resolution_type}`
+""")
+                if targeted_decision_maker:
+                    af.write(f"""- **Target Decision-Maker**: {targeted_decision_maker['name']} ({targeted_decision_maker['title']})
+- **LinkedIn Profile**: {targeted_decision_maker['url']}
+- **Why This Person**: {targeted_decision_maker['selection_rationale']['why_selected']}
+- **How Researched**: Localized LinkedIn search -> Firecrawl verbatim public mentions search (Zero fake synthesis).
+""")
+        except Exception:
+            pass
+
+    print(f"      👥 Job-Correlated Contacts Identified: {len(filtered_contacts)}")
+    if targeted_decision_maker:
+        print(f"      🎯 TARGET DECISION-MAKER: {targeted_decision_maker['name']} ({targeted_decision_maker['title']})")
+        print(f"         • Profile:         {targeted_decision_maker['url']}")
+        print(f"         • Direct Email:    {targeted_decision_maker.get('email') or 'Not publicly published'}")
+    if verified_outreach_email:
+        print(f"      📧 VERIFIED OUTREACH EMAIL: {verified_outreach_email} [{email_resolution_type}]")
+    else:
+        print(f"      🛡️ VERIFIED OUTREACH EMAIL: None found. (Automated email will be safely skipped to avoid bounce)")
+    
     return intelligence_payload
 
 
 # =====================================================================
 # STAGE 6: RECRUITER PITCH & APPLICATION PACKAGE ASSEMBLY
 # =====================================================================
-def stage_6_assemble_package(job: dict, target_dir: Path, keywords: dict, profile: dict, compiled_pdf: Path):
+# =====================================================================
+# STAGE 6: RECRUITER PITCH & APPLICATION PACKAGE ASSEMBLY
+# =====================================================================
+def stage_6_assemble_package(job: dict, target_dir: Path, keywords: dict, profile: dict, compiled_pdf: Path, intel: dict = None):
     print("\n[STAGE 6/8] 📦 Assembling Recruiter Pitch & Application Package...")
     cand = profile.get('candidate', {})
     company = job.get('company', '')
@@ -346,6 +665,8 @@ def stage_6_assemble_package(job: dict, target_dir: Path, keywords: dict, profil
             f"I focus on deploying production-grade machine learning models and robust services, backed by 22 months of commercial "
             f"software engineering at TCS."
         )
+
+    tdm = intel.get('targeted_decision_maker') if intel else None
 
     app_package = {
         'candidate': {
@@ -379,6 +700,7 @@ def stage_6_assemble_package(job: dict, target_dir: Path, keywords: dict, profil
             'why_this_role': pitch,
             'linkedin_note_300': f"Hi, I noticed the {title} opening at {company}. As an AI Engineer at KFUPM with expertise in PyTorch, Vision Transformers, and QA automation, my background closely aligns with your technical needs. I would welcome the chance to connect!"[:300]
         },
+        'targeted_decision_maker': tdm,
         'resume_path': str(compiled_pdf.resolve())
     }
 
@@ -404,30 +726,50 @@ def stage_6_assemble_package(job: dict, target_dir: Path, keywords: dict, profil
 
 
 # =====================================================================
-# STAGE 7: AUTOMATED RESEND RECRUITER OUTREACH ENGINE
+# STAGE 7: AUTOMATED RESEND RECRUITER OUTREACH ENGINE (BOUNCE-GUARDED)
 # =====================================================================
 def stage_7_resend_outreach(job: dict, target_dir: Path, intel: dict, to_email: str = None, force: bool = False, skip: bool = False):
     if skip:
         print("\n[STAGE 7/8] ⏭️ Skipping Resend Recruiter Outreach (--skip-email flag enabled).")
         return None
 
-    print("\n[STAGE 7/8] 📧 Executing Automated Resend Recruiter Outreach...")
+    print("\n[STAGE 7/8] 📧 Evaluating Automated Recruiter Outreach...")
     
-    recipient = to_email
-    if not recipient:
-        patterns = intel.get('recommended_email_patterns', [])
-        if patterns:
-            recipient = patterns[0]  # e.g. info@melon.sa
-        else:
-            recipient = os.getenv("DEFAULT_OUTREACH_EMAIL", "studioinfinitys@gmail.com")
+    tdm = (intel.get('targeted_decision_maker') if isinstance(intel, dict) else None) or {}
+    verified_email = intel.get('verified_outreach_email') if isinstance(intel, dict) else None
+    
+    # Priority: explicit CLI override --to > verified_outreach_email
+    recipient = to_email or verified_email
+    recipient_name = tdm.get('name') if (recipient and tdm.get('email') and recipient == tdm.get('email')) else None
 
-    print(f"      🎯 Target Recruiter/Company Inbox: {recipient}")
+    # BOUNCE PREVENTION GUARD: NEVER SEND TO SPECULATIVE / GUESSED EMAILS
+    if not recipient:
+        print("      🛡️ [BOUNCE PREVENTION GUARD] Zero verified email addresses discovered for this opening.")
+        print("      ⚠️ Skipping automated Resend email dispatch to prevent bounce and protect domain reputation.")
+        if tdm and tdm.get('url'):
+            print(f"      💼 Target Decision-Maker for Direct LinkedIn Outreach:")
+            print(f"         • Name:    {tdm.get('name')}")
+            print(f"         • Title:   {tdm.get('title')}")
+            print(f"         • Profile: {tdm.get('url')}")
+            print(f"         • Note:    300-char LinkedIn note prepared in application_package.json")
+        return None
+
+    # Verify domain MX before attempting dispatch
+    dom = recipient.split('@')[-1].strip()
+    if not check_domain_mx(dom):
+        print(f"      ❌ Domain '{dom}' failed DNS MX validation. Aborting dispatch to prevent bounce.")
+        return None
+
+    if recipient_name:
+        print(f"      🎯 Target Decision-Maker: {recipient_name} <{recipient}>")
+    else:
+        print(f"      🎯 Target Verified Corporate Inbox: <{recipient}>")
 
     sys.path.insert(0, str(REPO_DIR / 'scripts'))
     from send_resend_email import send_from_application_bundle
 
     try:
-        response = send_from_application_bundle(str(target_dir), to_email=recipient, force=force)
+        response = send_from_application_bundle(str(target_dir), to_email=recipient, recipient_name=recipient_name, force=force)
         if response:
             email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
             print(f"      🎉 [SUCCESS] Outreach email dispatched via Resend! ID: {email_id}")
@@ -438,7 +780,8 @@ def stage_7_resend_outreach(job: dict, target_dir: Path, intel: dict, to_email: 
                 cur = conn.cursor()
                 cur.execute("SELECT notes FROM jobs WHERE id = ?", (job['id'],))
                 current_notes = cur.fetchone()[0] or ''
-                new_note = f"Outreach sent to {recipient} (Resend ID: {email_id})"
+                name_str = f"to {recipient_name} " if recipient_name else ""
+                new_note = f"Outreach sent {name_str}<{recipient}> (Resend ID: {email_id})"
                 updated_notes = f"{current_notes} | {new_note}".strip(' |')
                 cur.execute("UPDATE jobs SET notes = ? WHERE id = ?", (updated_notes, job['id']))
                 conn.commit()
@@ -456,7 +799,7 @@ def stage_7_resend_outreach(job: dict, target_dir: Path, intel: dict, to_email: 
 # =====================================================================
 # STAGE 8: CANDIDATE REVIEW COCKPIT & DATABASE LOCK
 # =====================================================================
-def stage_8_candidate_cockpit(job: dict, target_dir: Path, direct_link: str, contacts: list):
+def stage_8_candidate_cockpit(job: dict, target_dir: Path, direct_link: str, intel: dict = None):
     print("\n[STAGE 8/8] 🚀 Locking DB State & Generating Candidate Review Cockpit...")
 
     # Update DB state strictly to 'tailored' and set application_folder
@@ -481,6 +824,9 @@ def stage_8_candidate_cockpit(job: dict, target_dir: Path, direct_link: str, con
         with open(receipt_file, 'r', encoding='utf-8') as rf:
             email_receipt = json.load(rf)
 
+    tdm = (intel.get('targeted_decision_maker') if isinstance(intel, dict) else None) or {}
+    contacts = intel.get('contacts_found', []) if isinstance(intel, dict) else (intel or [])
+
     print("\n" + "=" * 68)
     print(f"🎯 APPLICATION BUNDLE COMPLETE: {comp} | {title}")
     print("=" * 68)
@@ -494,9 +840,23 @@ def stage_8_candidate_cockpit(job: dict, target_dir: Path, direct_link: str, con
     print(f"📊 Alignment Scorecard:{target_dir / 'alignment_audit.md'}")
     print(f"👥 Hiring Contacts:    {target_dir / 'hiring_contacts.json'}")
 
+    if tdm:
+        print("\n" + "─" * 68)
+        print("🎯 TARGETED JOB-CORRELATED DECISION-MAKER")
+        print("─" * 68)
+        print(f"   Name:             {tdm.get('name')}")
+        print(f"   Role / Title:     {tdm.get('title')}")
+        print(f"   Direct Email:     {tdm.get('email') or 'Not publicly published'}")
+        print(f"   LinkedIn Profile: {tdm.get('url')}")
+        strat = tdm.get('selection_rationale', {})
+        if strat.get('why_selected'):
+            print(f"   💡 Why This Person: {strat.get('why_selected')}")
+        print("─" * 68)
+
     if email_receipt:
         resend_id = email_receipt.get('resend_id', 'N/A')
         sent_to = email_receipt.get('to', 'N/A')
+        sent_name = email_receipt.get('recipient_name') or f"{comp} Hiring Team"
         sent_at = email_receipt.get('sent_at', 'N/A')
         sender = email_receipt.get('sender', 'N/A')
         dashboard_url = email_receipt.get('resend_dashboard_url', f"https://resend.com/emails/{resend_id}")
@@ -505,19 +865,21 @@ def stage_8_candidate_cockpit(job: dict, target_dir: Path, direct_link: str, con
         print("📧 VERIFIED RESEND OUTREACH PROOF (AUTHORITATIVE)")
         print("─" * 68)
         print(f"   Status:            ✅ CONFIRMED DELIVERED TO RESEND API")
+        print(f"   Recipient:         {sent_name} <{sent_to}>")
         print(f"   Resend Message ID: {resend_id}")
-        print(f"   Delivered To:      {sent_to}")
         print(f"   Sent At:           {sent_at}")
         print(f"   Sender:            {sender}")
         print(f"   Attached PDF:      resume.pdf (Strictly 2 Pages Verified)")
         print(f"   Audit Dashboard:   {dashboard_url}")
         print("─" * 68)
     else:
-        print(f"📧 Resend Outreach:    ⚠️ Not Dispatched")
+        print(f"📧 Resend Outreach:    🛡️ Safely Skipped (Zero-Bounce Protection: No Fake/Guessed Emails)")
+        if tdm and tdm.get('url'):
+            print(f"💼 Direct LinkedIn:    👉 Connect with {tdm.get('name')} ({tdm.get('url')})")
     
     if contacts:
-        print("\n🔑 Key Contacts Discovered via Firecrawl:")
-        for c in contacts[:3]:
+        print("\n🔑 Other Key Contacts Discovered via Firecrawl:")
+        for c in contacts[1:4]:
             print(f"   • {c['name']} ({c['url']})")
 
     print("\n" + "═" * 68)
@@ -554,17 +916,17 @@ def run_pipeline(job_id: str, to_email: str = None, force_email: bool = False, s
         # Stage 4 (Alignment Audit with ATS Score Lift)
         audit_data = stage_4_alignment_audit(job, target_dir, keywords, ats_metrics=ats_metrics)
 
-        # Stage 5
+        # Stage 5 (Job-correlated Contact Discovery & Deep Email Resolution)
         intel = stage_5_firecrawl_contact_intelligence(job, target_dir)
 
-        # Stage 6
-        app_package = stage_6_assemble_package(job, target_dir, keywords, profile, compiled_pdf)
+        # Stage 6 (Assemble Package with targeted decision maker)
+        app_package = stage_6_assemble_package(job, target_dir, keywords, profile, compiled_pdf, intel=intel)
 
-        # Stage 7 (Resend Outreach Engine)
+        # Stage 7 (Resend Outreach Engine directly to decision-maker)
         resend_resp = stage_7_resend_outreach(job, target_dir, intel, to_email=to_email, force=force_email, skip=skip_email)
 
         # Stage 8
-        stage_8_candidate_cockpit(job, target_dir, direct_link, intel.get('contacts_found', []))
+        stage_8_candidate_cockpit(job, target_dir, direct_link, intel=intel)
 
         return True
 

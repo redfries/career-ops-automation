@@ -29,15 +29,24 @@ if not RESEND_API_KEY:
 resend.api_key = RESEND_API_KEY
 
 
-def build_email_html(candidate_name, role_title, company_name, pitch_text, links=None):
+def build_email_html(candidate_name, role_title, company_name, pitch_text, links=None, recipient_name=None):
     """Formats a clean, natural, human email (no AI badges, no marketing cards)."""
+    import re
     portfolio_link = links.get("portfolio", "https://infinitys.me") if links else "https://infinitys.me"
     linkedin_link = links.get("linkedin", "https://www.linkedin.com/in/redfries/") if links else "https://www.linkedin.com/in/redfries/"
     github_link = links.get("github", "https://github.com/redfries") if links else "https://github.com/redfries"
 
+    # Personalized greeting addressing the direct decision-maker if available
+    if recipient_name and recipient_name.strip():
+        clean_name = re.sub(r'^(dr\.|engr\.|mr\.|ms\.|mrs\.)\s*', '', recipient_name.strip(), flags=re.IGNORECASE)
+        first_name = clean_name.split()[0] if clean_name else recipient_name.strip()
+        greeting = f"Hi {first_name},"
+    else:
+        greeting = f"Hi {company_name} Team,"
+
     # Human-like, clean, neat email layout without cards or borders
     html = f"""<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 15px; color: #1a1a1a; line-height: 1.6; max-width: 600px;">
-  <p>Hi {company_name} Team,</p>
+  <p>{greeting}</p>
 
   <p>I noticed the {role_title} role at {company_name} and wanted to reach out directly to introduce myself.</p>
 
@@ -103,11 +112,29 @@ def send_email(to_email, subject, body_html, sender=None, resume_pdf_path=None):
         raise
 
 
-def send_from_application_bundle(bundle_dir, to_email=None, sender=None, force=False):
+def check_domain_mx(domain: str) -> bool:
+    if not domain or '.' not in domain:
+        return False
+    clean_domain = domain.strip().lower().rstrip('.')
+    try:
+        import dns.resolver
+        answers = dns.resolver.resolve(clean_domain, 'MX')
+        return len(answers) > 0
+    except Exception:
+        try:
+            import socket
+            socket.gethostbyname(clean_domain)
+            return True
+        except Exception:
+            return False
+
+
+def send_from_application_bundle(bundle_dir, to_email=None, recipient_name=None, sender=None, force=False):
     """Loads application_package.json and sends tailored application email."""
     bundle_path = Path(bundle_dir)
     pkg_file = bundle_path / "application_package.json"
     job_file = bundle_path / "job_details.json"
+    contacts_file = bundle_path / "hiring_contacts.json"
     receipt_file = bundle_path / "email_sent_receipt.json"
 
     if not pkg_file.exists():
@@ -132,6 +159,35 @@ def send_from_application_bundle(bundle_dir, to_email=None, sender=None, force=F
             job_title = job.get("title", job_title)
             company_name = job.get("company", company_name)
 
+
+    # Check for direct decision maker in contacts
+    decision_maker_title = None
+    email_confidence = "standard"
+    if contacts_file.exists():
+        try:
+            with open(contacts_file, "r", encoding="utf-8") as cf:
+                cdata = json.load(cf)
+                verified_outreach_email = cdata.get("verified_outreach_email")
+                tdm = cdata.get("targeted_decision_maker", {}) or {}
+                if not to_email:
+                    to_email = verified_outreach_email or (tdm.get("email") if tdm.get("is_verified") else None)
+                if not recipient_name and tdm.get("name") and to_email == tdm.get("email"):
+                    recipient_name = tdm.get("name")
+                decision_maker_title = tdm.get("title")
+                email_confidence = tdm.get("email_confidence", "verified")
+        except Exception as e:
+            print(f"[*] Note: Could not parse hiring_contacts.json: {e}")
+
+    # ZERO-BOUNCE SAFETY GUARD: Reject empty or unverified recipients
+    if not to_email:
+        print("[!] BOUNCE GUARD: No verified recipient email found in bundle. Aborting automated dispatch to protect domain reputation.")
+        return None
+
+    dom = to_email.split('@')[-1].strip().lower()
+    if not check_domain_mx(dom) and not force:
+        print(f"[!] BOUNCE GUARD: Domain '{dom}' failed MX record validation. Refusing to send to protect sender reputation.")
+        return None
+
     candidate = pkg.get("candidate", {})
     candidate_name = candidate.get("full_name", "Shabaaz Hussain Shaik")
     links = candidate.get("links", {})
@@ -141,7 +197,7 @@ def send_from_application_bundle(bundle_dir, to_email=None, sender=None, force=F
         pitch = "I am excited to submit my application for this role. My technical background in applied machine learning, computer vision, and automation makes me a strong fit."
 
     subject = f"Application: {job_title} - {candidate_name}"
-    html = build_email_html(candidate_name, job_title, company_name, pitch, links)
+    html = build_email_html(candidate_name, job_title, company_name, pitch, links, recipient_name=recipient_name)
     
     resume_pdf = pkg.get("resume_path")
     if not resume_pdf or not os.path.exists(resume_pdf):
@@ -149,8 +205,11 @@ def send_from_application_bundle(bundle_dir, to_email=None, sender=None, force=F
         if local_pdf.exists():
             resume_pdf = str(local_pdf)
 
-    # Default recipient for testing if none provided
-    target_to = to_email if to_email else "studioinfinitys@gmail.com"
+    target_to = to_email
+    if recipient_name:
+        print(f"[*] Dispatching personalized outreach to: {recipient_name} <{target_to}> ({email_confidence})")
+    else:
+        print(f"[*] Dispatching outreach to verified inbox: <{target_to}> ({email_confidence})")
     response = send_email(target_to, subject, html, sender=sender, resume_pdf_path=resume_pdf)
     email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
 
@@ -159,6 +218,9 @@ def send_from_application_bundle(bundle_dir, to_email=None, sender=None, force=F
         "delivery_status": "CONFIRMED_DELIVERED",
         "sent_at": datetime.datetime.now().isoformat(),
         "to": target_to,
+        "recipient_name": recipient_name,
+        "recipient_title": decision_maker_title,
+        "email_confidence": email_confidence,
         "sender": sender or os.getenv("RESEND_SENDER", "Shabaaz Hussain Shaik <shabaaz@infinitys.me>"),
         "reply_to": os.getenv("REPLY_TO_EMAIL", "theshabaaz@outlook.com"),
         "subject": subject,
@@ -176,7 +238,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Send automated emails using Resend API")
     parser.add_argument("--test", action="store_true", help="Send a test verification email")
     parser.add_argument("--app-dir", type=str, help="Path to tailored application bundle folder")
-    parser.add_argument("--to", type=str, default="studioinfinitys@gmail.com", help="Recipient email address")
+    parser.add_argument("--to", type=str, default=None, help="Recipient email address")
+    parser.add_argument("--recipient-name", type=str, help="Recipient direct name (e.g. Mahalakshmi)")
     parser.add_argument("--sender", type=str, help="Custom from address (e.g. shabaaz@infinitys.me)")
     parser.add_argument("--force", action="store_true", help="Force resend even if bundle was already sent")
 

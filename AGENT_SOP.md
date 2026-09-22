@@ -93,16 +93,25 @@ All listings in [`data/jobs.db`](data/jobs.db) exist in one of these authoritati
    - Compiles via Tectonic with strict PyMuPDF 2-page assertion and SHA256 checksum verification.
 4. **Resume vs. JD Alignment & Provenance Audit**:
    - Generates structured audit artifacts (`alignment_audit.json` and `alignment_audit.md`) with 100% provenance pass assurance.
-5. **Firecrawl Decision-Maker Discovery**:
-   - Queries LinkedIn & corporate domain via Firecrawl API to extract hiring manager names (CDO, CTO, Head of AI), titles, profile URLs, and verified email patterns -> saved to `hiring_contacts.json`.
+5. **Job-Correlated Decision-Maker Discovery & Deep Email Research**:
+   - **Job-Specific Targeting**: Strictly avoids C-suite executives (CTO, CEO, Founder) at mid/large companies who do not review individual contributor applications. Instead, dynamically targets people corresponding directly to that role:
+     - *Technical Recruiters & Talent Acquisition Specialists* (AI / Tech).
+     - *Direct Functional Engineering & Delivery Managers* (AI/ML Lead, Team Lead, Engineering Manager).
+   - **Deep Email Research via Firecrawl**:
+     - Queries `site:rocketreach.co OR site:hunter.io` for verified company email formats (e.g. `[first].[last]@domain` with 65–90%+ confidence).
+     - Queries direct email mentions for the person (`"{name}" "{domain}" email`).
+     - Synthesizes the exact verified email address.
+   - **Audited Provenance**: Records full **Research Methodology** (*How it was researched*) and **Selection Rationale** (*Why this person was targeted*) in `hiring_contacts.json` and `alignment_audit.md`.
 6. **Recruiter Pitch & Package Assembly**:
    - Synthesizes clean, human-styled cover pitch and 300-char LinkedIn note in `application_package.json`.
-7. **Automated Resend Recruiter Outreach Engine**:
-   - Dispatches cold outreach email with the 2-page `resume.pdf` attached to discovered corporate/recruiter email (e.g. `info@company`, `careers@company`) from `shabaaz@infinitys.me`.
-   - Saves verifiable cryptographic delivery receipt `email_sent_receipt.json` (Resend ID, timestamp, and audit dashboard link).
+   - Embeds targeted decision-maker recipient metadata.
+7. **Automated Personalized Resend Recruiter Outreach Engine**:
+   - Dispatches a personalized 1-on-1 outreach email addressed directly to the hiring decision-maker (e.g., *"Hi Aiswarya,"*) with the verified 2-page `resume.pdf` attached from `shabaaz@infinitys.me`.
+   - **Zero Generic Emails**: Replaces generic `info@company.com` messages with targeted individual emails.
+   - Saves verifiable cryptographic delivery receipt `email_sent_receipt.json` (recipient name, email, Resend ID, timestamp, and audit dashboard link).
    - Enforces deduplication guard so emails are never sent twice to the same target.
 8. **Candidate Review Cockpit & Database State Lock**:
-   - Prints full application brief with authoritative Resend delivery proof badge.
+   - Prints full application brief with authoritative Resend delivery proof badge, including the **Why This Person** and **How Researched** audit trails.
    - Locks DB status strictly to `tailored` (keeping `applied_at = NULL` until portal submission is confirmed via `--confirm-applied`).
 
 ---

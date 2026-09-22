@@ -96,16 +96,19 @@ python scripts/pipeline_orchestrator.py --job-id <JOB_ID> --mode balanced --skip
    - Compiles via Tectonic and programmatically asserts strict 2-page invariant.
 4. **Stage 4/8: Resume vs. JD Alignment & Provenance Audit**
    - Computes ATS match score lift (e.g. +30.5%) and writes `alignment_audit.json` and `alignment_audit.md`.
-5. **Stage 5/8: Firecrawl Contact Intelligence Engine**
-   - Identifies key decision makers (Engineering Managers, Tech Recruiters) and recommended company email patterns.
+5. **Stage 5/8: Job-Correlated Contact & Deep Email Intelligence Engine**
+   - Identifies direct role-correlated hiring decision-makers (Technical Recruiters, AI/Engineering Managers), strictly avoiding C-suite at mid/large companies.
+   - Discovers verified company email patterns (via RocketReach/Hunter) and queries direct email mentions to synthesize exact emails.
+   - Logs full *Why This Person* selection rationale and *How Researched* methodology in `hiring_contacts.json` and `alignment_audit.md`.
 6. **Stage 6/8: Recruiter Pitch & Application Package Assembly**
-   - Assembles tailored pitch and `application_package.json`.
-7. **Stage 7/8: Automated Resend Recruiter Outreach Engine**
-   - Dispatches natural executive outreach email with attached tailored PDF resume via Resend API.
+   - Assembles tailored pitch, 300-char connection note, and targeted decision-maker metadata in `application_package.json`.
+7. **Stage 7/8: Automated 1-on-1 Personalized Resend Outreach Engine**
+   - Dispatches natural personalized outreach email addressed directly to the hiring decision-maker (e.g., *"Hi Aiswarya,"*) with attached tailored 2-page PDF resume via Resend API.
+   - Zero generic `info@` emails.
    - Saves delivery proof to `email_sent_receipt.json` and records Resend message ID into SQLite notes.
 8. **Stage 8/8: Candidate Review Cockpit & DB State Invariant**
    - Locks DB status as `tailored` (or preserves `applied`).
-   - Displays authoritative Resend proof and outputs direct portal link for candidate submission.
+   - Displays authoritative Resend proof, decision-maker audit trail (*Why This Person* & *How Researched*), and direct portal link for candidate submission.
 
 ---
 

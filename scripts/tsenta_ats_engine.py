@@ -23,7 +23,9 @@ if sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 REPO_DIR = Path(__file__).resolve().parent.parent
-RESUME_SOURCE_DIR = REPO_DIR / 'my-resume'
+MASTER_RESUME_SOURCE_DIR = Path(r"C:\Users\lords\OneDrive\Documents\resume\my-resume")
+LOCAL_RESUME_SOURCE_DIR = REPO_DIR / 'my-resume'
+RESUME_SOURCE_DIR = MASTER_RESUME_SOURCE_DIR if MASTER_RESUME_SOURCE_DIR.exists() else LOCAL_RESUME_SOURCE_DIR
 CANONICAL_PROFILE_PATH = REPO_DIR / 'data' / 'canonical_profile.json'
 
 
@@ -65,6 +67,9 @@ class JDDecomposer:
         'docker': ['docker', 'container', 'containers', 'containerization'],
         'cloud_gpu': ['aws', 'gcp', 'azure', 'modal', 'modal gpu', 'gpu inference'],
         'streamlit': ['streamlit', 'gradio'],
+        'automation_workflow': ['n8n', 'make', 'zapier', 'workflow automation', 'automation', 'automations'],
+        'modern_databases': ['supabase', 'mongodb', 'nosql', 'relational database', 'database architecture'],
+        'rapid_ai_tools': ['claude code', 'codex', 'vibe coder', 'vibe coding', 'intelligent agents', 'openclaw', 'hermes', 'cowork'],
         
         # Quality & Testing
         'qa_testing': ['qa', 'testing', 'test automation', 'regression', 'selenium', 'tosca', 'qtest', 'quality assurance']
@@ -172,7 +177,7 @@ class SemanticExperienceMapper:
         focus = decomposed_jd['primary_focus']
         taxonomy = decomposed_jd['taxonomy']
 
-        # 1. Re-Rank Projects (Personalized Reading Experience, Arabic Cheque OCR, ReSeeAI)
+        # 1. Re-Rank Projects (Canonical Master's Research Projects)
         project_scores = {
             'proj_pre': 0.0,
             'proj_arabic_ocr': 0.0,
@@ -468,13 +473,9 @@ class ModeRewriter:
     {2025 – 2026} % Date(s)
     {
       \begin{cvitems}
-        \item {Built a full-stack RAG-based AI reading assistant with a responsive React UI that semantically highlights relevant sentences in research PDFs against a user-defined interest profile using embedding similarity, not keyword matching.}
-        \item {Fused multi-source profile representations (topics, keywords, free text, seed papers) using weighted-mean sentence embeddings with \texttt{all-mpnet-base-v2}.}
-        \item {Integrated per-sentence LLM explanations via Google Gemini, surfacing \textit{why} each sentence was flagged as relevant to the reader's work.}
-        \item {Designed structured prompt templates for Gemini and evaluated model response alignment against user interest profiles.}
-        \item {Implemented FastAPI endpoints for search and highlighting, then integrated the frontend via REST API calls with pagination, error handling, and caching for smoother UX.}
-        \item {Deployed on Modal GPU infrastructure, FastAPI backend and web frontend, supports both GPU and CPU inference paths transparently.}
-        \item {Designed local-first with portable JSON profiles, no accounts, no tracking, runs entirely on the user's own environment.}
+        \item {Built a full-stack RAG-based AI reading assistant that semantically highlights relevant sentences in research PDFs against a user-defined interest profile using embedding similarity, not keyword matching.}
+        \item {Fused multi-source profile representations using weighted-mean sentence embeddings with \texttt{all-mpnet-base-v2} and integrated per-sentence LLM explanations via Google Gemini.}
+        \item {Deployed on Modal GPU infrastructure with a FastAPI backend and responsive web frontend, supporting both GPU and CPU inference paths transparently.}
       \end{cvitems}
     }""",
 
@@ -486,11 +487,9 @@ class ModeRewriter:
     {2025 – 2026} % Date(s)
     {
       \begin{cvitems}
-        \item {Engineered a three-stage pipeline, detect, read, and cross-validate, for both the numeric and handwritten monetary fields on Arabic bank cheques.}
-        \item {Achieved \textbf{97.5\% field detection accuracy} (IoU $\geq$ 0.50) using Cascade R-CNN with ResNet-50 + FPN, and \textbf{87.79\% exact-match accuracy} on digit recognition with a custom CRNN + BiLSTM + CTC model.}
-        \item {Fine-tuned Qwen3.5-0.8B vision-language model with LoRA for handwritten Arabic legal-text OCR, a domain with virtually no prior automated solutions.}
-        \item {Built a lightweight Streamlit web app for uploads and results review, then deployed a live demo on Modal (A10G GPU) with both CLI and web UI interfaces for batch and single-image processing.}
-        \item {Added a simple Node.js service to queue batch jobs and stream status updates to the UI, improving perceived performance for larger batches.}
+        \item {Engineered a three-stage pipeline — detect, read, and cross-validate — for both numeric and handwritten monetary fields on Arabic bank cheques.}
+        \item {Achieved \textbf{97.5\% field detection accuracy} using Cascade R-CNN (ResNet-50 + FPN) and \textbf{87.79\% exact-match accuracy} on digit recognition with a custom CRNN + BiLSTM + CTC model.}
+        \item {Fine-tuned Qwen3.5-0.8B vision-language model with LoRA for handwritten Arabic legal-text OCR, deploying a live demo on Modal GPU with Streamlit and CLI interfaces.}
       \end{cvitems}
     }""",
 
@@ -502,11 +501,8 @@ class ModeRewriter:
     {2024 – 2025} % Date(s)
     {
       \begin{cvitems}
-        \item {Fine-tuned RETFound (ViT-Large-Patch16) retinal foundation model for disease detection on fundus and OCT imaging datasets.}
-        \item {Reached \textbf{92\% accuracy on fundus} and \textbf{94\% on OCT} via full fine-tuning, up from a 56.6\% linear probe baseline.}
-        \item {Evaluated four fine-tuning strategies (linear probe, partial, full, adapters) to identify the optimal approach under limited medical imaging data constraints.}
-        \item {Integrated Grad-CAM visualizations to surface which retinal regions drive predictions, supporting clinical interpretability of model decisions.}
-        \item {Packaged the inference flow behind FastAPI routes and documented request and response schemas for straightforward client-side integration.}
+        \item {Fine-tuned RETFound (ViT-Large-Patch16) foundation model for disease detection on fundus and OCT imaging datasets, achieving \textbf{92\% accuracy on fundus} and \textbf{94\% on OCT}.}
+        \item {Evaluated four fine-tuning strategies under limited medical imaging data constraints and integrated Grad-CAM visualizations to ensure clinical interpretability.}
       \end{cvitems}
     }"""
         }
@@ -563,11 +559,11 @@ class ModeRewriter:
     {Oct. 2024 – Apr. 2026} % Date(s)
     {
       \begin{cvitems}
-        \item {Consolidated fragmented physical inventory records into a structured Excel database, improving data quality for campus-wide registry cleanup and audit readiness.}
-        \item {Built dynamic pivot table dashboards and prepared monthly asset reports to support department-level procurement planning and budget forecasting.}
-        \item {Reconciled procurement records against active inventory using Excel formulas, identifying mismatches and standardizing data templates used across stakeholders.}
-        \item {Conducted weekly tutorial and lab problem-solving sessions for undergraduate computer science courses, mentoring students on debugging, data structures, and web basics like HTML and CSS.}
-        \item {Evaluated and graded programming assignments, lab reports, and exams, delivering actionable feedback and lightweight code review style notes to improve student learning outcomes.}
+        \item {Architected centralized relational database structures to consolidate fragmented university inventory and procurement records, establishing high data integrity and standardized schemas.}
+        \item {Automated routine data reconciliation and monthly procurement reporting workflows using Python scripts and dynamic dashboards, eliminating manual reconciliation overhead.}
+        \item {Reconciled procurement records against active inventory using structured database queries and formulas, identifying mismatches and standardizing templates across stakeholders.}
+        \item {Conducted weekly tutorial and lab problem-solving sessions for undergraduate computer science courses, mentoring students on database systems, Python programming, and software engineering.}
+        \item {Evaluated and graded programming assignments, lab reports, and technical projects, delivering actionable code review feedback to improve code quality and system architecture.}
       \end{cvitems}
     }
 

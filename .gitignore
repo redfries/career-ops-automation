@@ -21,6 +21,7 @@ Thumbs.db
 *.zip
 *.bak*
 scratch_*.md
+scratch/
 
 data/browser_profile/
 

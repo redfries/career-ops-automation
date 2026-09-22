@@ -16,11 +16,10 @@ An autonomous, deterministic job application automation system designed for AI &
  │    • Stage 1: Ingestion, validation & direct portal link resolution                    │
  │    • Stage 2: Technical taxonomy mapping (ViT, PyTorch, LangChain, RAG, OCR, QA)       │
  │    • Stage 3: Dynamic LaTeX tailoring (sections/about-me.tex) & Tectonic compilation    │
- │    • Stage 4: Resume vs JD alignment audit (Strict PyMuPDF 2-page assertion)          │
- │    • Stage 5: Firecrawl decision-maker intelligence (LinkedIn & corporate inboxes)     │
+ │    • Stage 5: Firecrawl job-correlated contact & exact email intelligence (No C-suite)  │
  │    • Stage 6: Application package & human-styled pitch assembly                        │
- │    • Stage 7: Automated Resend recruiter outreach (resume.pdf attached, proof logged)  │
- │    • Stage 8: Candidate review cockpit & state lock (tailored)                         │
+ │    • Stage 7: Automated 1-on-1 personalized Resend outreach (resume.pdf attached)       │
+ │    • Stage 8: Candidate review cockpit with 'Why' & 'How' research audit               │
  └──────────────────────────────────────┬─────────────────────────────────────────────────┘
                                         │
                                         ├── Status: tailored (cryptographic receipt logged)
