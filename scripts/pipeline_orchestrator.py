@@ -56,7 +56,7 @@ def load_env():
     return env_vars
 
 ENV_VARS = load_env()
-FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY', 'fc-a437930feeae4864bb0e5194d4a18153')
+FIRECRAWL_API_KEY = os.getenv('FIRECRAWL_API_KEY', '')
 
 
 def get_db_connection():
@@ -91,9 +91,9 @@ def stage_1_ingest_and_validate(job_id: str):
         raise ValueError(f"Job ID #{job_id} not found in database {DB_PATH}")
 
     job = dict(row)
-    company = job.get('company', '').strip()
-    title = job.get('title', '').strip()
-    desc = job.get('description_text', '').strip()
+    company = (job.get('company') or '').strip()
+    title = (job.get('title') or '').strip()
+    desc = (job.get('description_text') or '').strip()
 
     if not company or not title:
         raise ValueError(f"Job #{job_id} has invalid company or title.")
@@ -255,7 +255,7 @@ def check_domain_mx(domain: str) -> bool:
             return False
 
 def is_valid_recruitment_email(email: str) -> bool:
-    """Strictly validates syntax, non-binary extension, non-placeholder, and active MX record."""
+    """Strictly validates syntax, non-binary extension, non-placeholder, non-press/legal, and active MX record."""
     if not email or not isinstance(email, str):
         return False
     email = email.strip().lower().rstrip('.')
@@ -263,6 +263,9 @@ def is_valid_recruitment_email(email: str) -> bool:
         return False
     bad_exts = ('.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.pdf', '.css', '.js', '.woff')
     if any(email.endswith(ext) for ext in bad_exts):
+        return False
+    bad_prefixes = ('press@', 'media@', 'ir@', 'investor@', 'investors@', 'billing@', 'legal@', 'security@', 'privacy@', 'abuse@', 'postmaster@', 'noreply@', 'no-reply@', 'support@', 'sales@')
+    if any(email.startswith(p) for p in bad_prefixes):
         return False
     dom = email.split('@')[1]
     bad_domains = ('example.com', 'domain.com', 'test.com', 'wixpress.com', 'sentry.io', 'google.com', 'github.com', 'facebook.com', 'twitter.com')
@@ -276,12 +279,12 @@ def is_valid_recruitment_email(email: str) -> bool:
 # =====================================================================
 def stage_5_firecrawl_contact_intelligence(job: dict, target_dir: Path):
     print("\n[STAGE 5/8] 🕵️ Executing Deep Verifiable Firecrawl Contact & Email Intelligence...")
-    company = job.get('company', '').strip()
-    website = job.get('company_website', '').strip()
-    title = job.get('title', '').strip()
-    location = job.get('location', '').strip()
-    job_url = job.get('job_url', '').strip()
-    description_text = job.get('description_text', '')
+    company = (job.get('company') or '').strip()
+    website = (job.get('company_website') or '').strip()
+    title = (job.get('title') or '').strip()
+    location = (job.get('location') or '').strip()
+    job_url = (job.get('job_url') or '').strip()
+    description_text = job.get('description_text') or ''
     
     # Extract clean domain
     domain = re.sub(r'^https?://(?:www\.)?', '', website or '').split('/')[0].strip()
@@ -578,8 +581,13 @@ def stage_5_firecrawl_contact_intelligence(job: dict, target_dir: Path):
             key=lambda x: any(k in x['email'] for k in recruitment_keywords),
             reverse=True
         )
-        verified_outreach_email = sorted_emails[0]['email']
-        email_resolution_type = sorted_emails[0]['confidence']
+        top_cand = sorted_emails[0]['email']
+        if any(k in top_cand for k in recruitment_keywords) or sorted_emails[0].get('confidence') == 'OFFICIAL_CAREERS_PAGE_VERIFIED':
+            verified_outreach_email = top_cand
+            email_resolution_type = sorted_emails[0]['confidence']
+        else:
+            verified_outreach_email = None
+            email_resolution_type = "NO_GENUINE_RECRUITMENT_EMAIL_FOUND"
 
     intelligence_payload = {
         "company": company,
@@ -792,8 +800,8 @@ def stage_7_resend_outreach(job: dict, target_dir: Path, intel: dict, to_email: 
             print("      ℹ️ Email previously dispatched (deduplication active).")
         return response
     except Exception as e:
-        print(f"      ⚠️ Resend dispatch error: {e}")
-        raise RuntimeError(f"Resend email dispatch failed to {recipient}: {str(e)}")
+        print(f"      ⚠️ Resend dispatch notice: {e} (Falling back to portal apply & LinkedIn outreach)")
+        return None
 
 
 # =====================================================================

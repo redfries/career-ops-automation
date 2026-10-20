@@ -1,6 +1,17 @@
 import os, sys, time, json, sqlite3, requests, re
+from pathlib import Path
 
-API_KEY = 'fc-a437930feeae4864bb0e5194d4a18153'
+# Load environment variables from .env
+ENV_PATH = Path(__file__).resolve().parent.parent / '.env'
+if ENV_PATH.exists():
+    with open(ENV_PATH, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith('#') and '=' in line:
+                k, v = line.split('=', 1)
+                os.environ.setdefault(k.strip(), v.strip())
+
+API_KEY = os.getenv('FIRECRAWL_API_KEY')
 DB_PATH = 'data/jobs.db'
 
 sys.path.insert(0, os.path.abspath('scripts'))
@@ -47,6 +58,11 @@ def scrape_url(url):
     return ''
 
 def main():
+    if not API_KEY:
+        print("[!] ERROR: FIRECRAWL_API_KEY not found in environment or .env file.")
+        print("    Please add FIRECRAWL_API_KEY=fc-... to your .env file.")
+        sys.exit(1)
+
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute("SELECT company, title FROM jobs")
